@@ -351,7 +351,22 @@
         function exportData() { const data = allBooks.filter(b => b.userId === currentUser); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(data)], {type:"application/json"})); a.download = `BIBLIOTECA_${currentUser}.json`; a.click(); }
         function openSortModal() { showModal(`<div class="modal-content"><h2>Ordenar</h2><button onclick="sortB('title')" class="nav-btn">Título</button><button onclick="sortB('author')" class="nav-btn">Autor</button><button onclick="closeModal()" class="btn-action" style="width:100%;margin-top:10px">Cerrar</button></div>`); }
         function sortB(k) { allBooks.sort((a,b) => a[k].localeCompare(b[k])); renderBooks(); closeModal(); }
-        function openEditBookModal() { const b = allBooks.find(x => x.id === currentBookId); showModal(`<div class="modal-content"><h2>Editar</h2><input type="text" id="et" value="${b.title}"><input type="text" id="ea" value="${b.author}"><input type="text" id="ey" value="${b.year || ''}"><input type="text" id="er" value="${b.readDate || ''}"><div style="display:flex;gap:10px;"><button onclick="closeModal()" class="btn-action" style="background:#444;flex:1">Cancelar</button><button onclick="upB()" class="btn-action" style="background:white;color:black;flex:2">Actualizar</button></div></div>`); }
+        function openEditBookModal() { 
+                const b = allBooks.find(x => x.id === currentBookId); 
+                showModal(`<div class="modal-content">
+                    <h2>Editar Libro</h2>
+                    <input type="text" id="et" value="${b.title}" placeholder="Título">
+                    <input type="text" id="ea" value="${b.author}" placeholder="Autor">
+                    <input type="text" id="ey" value="${b.year || ''}" placeholder="Año">
+                    <input type="text" id="er" value="${b.readDate || ''}" placeholder="Fecha lectura">
+                    <p style="font-size:0.8rem; color:var(--gray); margin:10px 0 5px;">Cambiar foto (opcional):</p>
+                    <input type="file" id="ef" accept="image/*">
+                    <div style="display:flex;gap:10px;margin-top:10px;">
+                        <button onclick="closeModal()" class="btn-action" style="background:#444;flex:1">Cancelar</button>
+                        <button onclick="upB()" class="btn-action" style="background:white;color:black;flex:2">Actualizar</button>
+                    </div>
+                </div>`); 
+            }
         async function upB() { const b = allBooks.find(x => x.id === currentBookId); b.title = document.getElementById('et').value; b.author = document.getElementById('ea').value.toUpperCase(); b.year = document.getElementById('ey').value; b.readDate = document.getElementById('er').value; await sync(); openBookDetail(currentBookId); renderBooks(); closeModal(); }
         async function deleteBook() { if(confirm("¿Borrar?")) { allBooks = allBooks.filter(b => b.id !== currentBookId); await sync(); closeBookDetail(); } }
     </script>
