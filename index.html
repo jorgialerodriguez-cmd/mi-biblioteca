@@ -394,7 +394,20 @@ function renderStars(rating) {
         async function togglePend() { const b = allBooks.find(x => x.id === currentBookId); b.isPend = !b.isPend; document.getElementById('pend-svg').classList.toggle('active-pend', b.isPend); await sync(); }
         function showModal(c) { document.getElementById('modal-dynamic-content').innerHTML = c; document.getElementById('modal-overlay').style.display = 'flex'; }
         function closeModal() { document.getElementById('modal-overlay').style.display = 'none'; }
-        function openBookModal() { showModal(`<div class="modal-content"><h2>Nuevo Libro</h2><input type="text" id="bt" placeholder="Título"><input type="text" id="ba" placeholder="Autor"><input type="text" id="by" placeholder="Año"><input type="text" id="br" placeholder="Fecha lectura"><input type="file" id="bf" accept="image/*"><div style="display:flex;gap:10px;margin-top:10px;"><button onclick="closeModal()" class="btn-action" style="background:#444;flex:1">Cancelar</button><button onclick="saveBook()" class="btn-action" style="background:white;color:black;flex:2">Guardar</button></div></div>`); }
+        function openBookModal() { 
+    showModal(`<div class="modal-content">
+        <h2>Nuevo Libro</h2>
+        <input type="text" id="bt" placeholder="Título">
+        <input type="text" id="ba" placeholder="Autor">
+        <input type="text" id="by" placeholder="Año publicación">
+        <input type="text" id="br" placeholder="Fecha lectura (ej: 28/01/26)">
+        <input type="file" id="bf" accept="image/*">
+        <div style="display:flex;gap:10px;margin-top:10px;">
+            <button onclick="closeModal()" class="btn-action" style="background:#444;flex:1">Cancelar</button>
+            <button onclick="saveBook()" class="btn-action" style="background:white;color:black;flex:2">Guardar</button>
+        </div>
+    </div>`); 
+}
         function openProfileModal(m) { const isEdit = m === 'edit'; const n = isEdit ? currentUser : ""; const currentAv = isEdit ? document.getElementById('current-avatar').innerHTML : "👤"; showModal(`<div class="modal-content"><h2>Perfil</h2><div id="pp" style="width:80px;height:80px;background:#333;margin:0 auto 10px;border-radius:4px;display:flex;justify-content:center;align-items:center;font-size:40px;overflow:hidden;">${currentAv}</div><input type="file" id="pu" accept="image/*" onchange="prevA(event)"><input type="text" id="p_n" value="${n}" placeholder="Nombre"><button onclick="exportData()" class="btn-action" style="background:#333;width:100%;margin-bottom:10px">Exportar mi Biblioteca</button><div style="display:flex;gap:10px;"><button onclick="closeModal()" class="btn-action" style="background:#444;flex:1">Cancelar</button><button onclick="saveProf('${m}')" class="btn-action" style="background:white;color:black;flex:2">Guardar</button></div></div>`); }
         function openAddPageModal() { showModal(`<div class="modal-content"><h2>Añadir Página</h2><input type="file" id="pf" accept="image/*"><input type="number" id="pn" placeholder="Nº"><textarea id="pc" placeholder="Nota"></textarea><div style="display:flex;gap:10px;"><button onclick="openAllPagesView()" class="btn-action" style="background:#444;flex:1">Atrás</button><button onclick="saveP()" class="btn-action" style="background:white;color:black;flex:2">Guardar</button></div></div>`); }
         function openAllPagesView() { const b = allBooks.find(x => x.id === currentBookId); let content = (b.pages || []).map((p, i) => `<div class="page-scroll-item"><div class="psi-left" onclick="zoomImg(${i})"><img src="${p.img}"></div><div class="psi-right"><h1>Página ${p.num}</h1><p>${p.comm}</p><div style="display:flex;gap:10px;margin-top:auto"><button onclick="editP(${i})" class="btn-action" style="background:#444;color:white">Editar</button><button onclick="delP(${p.id})" class="btn-action" style="background:#e50914;">Borrar</button></div></div></div>`).join(''); showModal(`<div class="all-pages-view"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;"><h2>Páginas de ${b.title}</h2><div><button onclick="openAddPageModal()" class="btn-action" style="background:white;color:black;margin-right:10px;">Añadir</button><button onclick="closeModal()" class="btn-action" style="background:#444;">Volver</button></div></div>${content || '<p>Sin páginas.</p>'}</div>`, "95vw"); }
