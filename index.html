@@ -322,10 +322,24 @@
         }
         function openAddPageModal() { showModal(`<div class="modal-content"><h2>Nueva Página</h2><input type="file" id="pf" accept="image/*"><input type="number" id="pn" placeholder="Nº de página"><textarea id="pc" placeholder="Nota de la página"></textarea><div style="display:flex;gap:10px;"><button onclick="openAllPagesView()" class="btn-action" style="background:#444;flex:1">Atrás</button><button onclick="saveP()" class="btn-action" style="background:white;color:black;flex:2">Guardar</button></div></div>`); }
         async function saveP() { 
-            const f = document.getElementById('pf').files[0]; if(!f) return; 
+            const f = document.getElementById('pf').files[0]; 
+            if(!f) { alert("Por favor, selecciona una imagen"); return; } 
+            
+            // Procesamos la imagen y guardamos
             let i = await processImg(f); 
-            allBooks.find(x => x.id === currentBookId).pages.push({id:Date.now(), num:document.getElementById('pn').value, comm:document.getElementById('pc').value, img:i}); 
-            await sync(); openAllPagesView(); 
+            allBooks.find(x => x.id === currentBookId).pages.push({
+                id: Date.now(), 
+                num: document.getElementById('pn').value, 
+                comm: document.getElementById('pc').value, 
+                img: i
+    }); 
+    
+    await sync(); // Sincroniza con la nube
+    
+    // ESTAS SON LAS LÍNEAS QUE HACEN LA MAGIA:
+    closeModal();      // Cierra la ventana de "Añadir página"
+    openAllPagesView(); // Abre automáticamente la lista actualizada
+}
         }
 
         function zoomImg(idx) { currentZoomIdx = idx; const b = allBooks.find(x => x.id === currentBookId); document.getElementById('zoom-img').src = b.pages[idx].img; document.getElementById('zoom-overlay').style.display = 'flex'; }
