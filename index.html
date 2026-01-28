@@ -319,22 +319,44 @@ function renderStars(rating) {
 
         // --- FUNCIONES GUARDADO CON CIERRE ---
         async function saveBook() {
-            const t = document.getElementById('bt').value, a = document.getElementById('ba').value.toUpperCase(), f = document.getElementById('bf').files[0];
+            const t = document.getElementById('bt').value;
+            const a = document.getElementById('ba').value.toUpperCase();
+            const y = document.getElementById('by').value; // Año
+            const r = document.getElementById('br').value; // Fecha lectura
+            const f = document.getElementById('bf').files[0];
+            
             if(!t) return;
             
-            // Procesamos la imagen (esto es lo que tarda un poco)
-            let cov = '📖'; if(f) cov = await processImg(f);
-            await sync()
-            // Una vez procesada, cerramos la ventana al instante
+            // Procesamos la imagen
+            let cov = '📖'; 
+            if(f) cov = await processImg(f);
+            
+            // Cerramos la ventana al instante
+            await sync(); 
             closeModal();
             
-            // Añadimos al array local
-            allBooks.push({ id: Date.now(), userId: currentUser, title: t, author: a, cover: cov, year: document.getElementById('by').value, readDate: document.getElementById('br').value, favorite: false, marked: false, isPend: false, rating: 0, comment: "", pages: [] });
+            // Añadimos el libro con TODOS los campos recuperados
+            allBooks.push({ 
+                id: Date.now(), 
+                userId: currentUser, 
+                title: t, 
+                author: a, 
+                cover: cov, 
+                year: y,        // Campo recuperado
+                readDate: r,    // Campo recuperado
+                favorite: false, 
+                marked: false, 
+                isPend: false, 
+                rating: 0, 
+                comment: "", 
+                pages: [] 
+            });
             
-            // Sincronizamos en segundo plano y refrescamos la cuadrícula
+            // Sincronizamos y refrescamos
             sync(); 
             renderBooks();
         }
+                }
 
         async function saveP() { 
             const f = document.getElementById('pf').files[0], n = document.getElementById('pn').value, c = document.getElementById('pc').value;
