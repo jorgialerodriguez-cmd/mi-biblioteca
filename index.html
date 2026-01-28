@@ -294,12 +294,17 @@
         async function saveP() { 
             const f = document.getElementById('pf').files[0], n = document.getElementById('pn').value, c = document.getElementById('pc').value;
             if(!f) { alert("Sube una foto"); return; } 
-            closeModal();
+            
+            // 1. Procesamos la imagen primero
             let i = await processImg(f); 
             const book = allBooks.find(x => x.id === currentBookId);
             if(!book.pages) book.pages = [];
+            
+            // 2. Guardamos los datos
             book.pages.push({id:Date.now(), num:n, comm:c, img:i}); 
             await sync(); 
+            
+            // 3. LA CLAVE: Refrescamos la vista de páginas directamente sin cerrar y abrir todo
             openAllPagesView(); 
         }
 
