@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BookFlix Pro - Versión Final Blindada</title>
+    <title>BookFlix Pro - Versión Definitiva v4</title>
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore-compat.js"></script>
     
@@ -145,9 +145,9 @@
     </div>
 
     <div id="zoom-overlay">
-        <button class="zoom-nav" onclick="changeZoomIdx(-1)" style="left:20px">❮</button>
+        <button class="zoom-nav zoom-prev" onclick="changeZoomIdx(-1)" style="left:20px">❮</button>
         <img id="zoom-img" onclick="this.parentElement.style.display='none'">
-        <button class="zoom-nav" onclick="changeZoomIdx(1)" style="right:20px">❯</button>
+        <button class="zoom-nav zoom-next" onclick="changeZoomIdx(1)" style="right:20px">❯</button>
     </div>
     <div id="modal-overlay" class="modal-overlay"><div id="modal-dynamic-content"></div></div>
 
@@ -223,6 +223,15 @@
             showCategory('all');
         }
 
+        function showCategory(cat) {
+            currentCat = cat;
+            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+            const btn = document.getElementById('btn-'+cat); if(btn) btn.classList.add('active');
+            closeBookDetail(); renderBooks();
+        }
+
+        function filterByAuthor(author) { document.getElementById('main-search').value = author; closeBookDetail(); renderBooks(); }
+
         function renderBooks() {
             const grid = document.getElementById('books-grid'); grid.innerHTML = '';
             const query = document.getElementById('main-search').value.toLowerCase();
@@ -247,48 +256,12 @@
             document.getElementById('det-author').innerText = b.author;
             document.getElementById('det-meta').innerText = (b.year ? "Año: " + b.year : "") + (b.readDate ? " | Leído: " + b.readDate : "");
             document.getElementById('det-img-container').innerHTML = b.cover.startsWith('data') ? `<img src="${b.cover}">` : b.cover;
-            document.getElementById('comment-text').innerText = b.comment || "Sin comentarios.";
+            document.getElementById('comment-text').innerText = b.comment || "Sin comentario.";
             document.getElementById('heart-svg').classList.toggle('active-heart', b.favorite);
             document.getElementById('mark-svg').classList.toggle('active-mark', b.marked);
             document.getElementById('pend-svg').classList.toggle('active-pend', b.isPend);
-function renderStars(rating) {
-    const container = document.getElementById('star-container');
-    container.innerHTML = '';
-    for(let i = 1; i <= 5; i++) {
-        const wrapper = document.createElement('div');
-        wrapper.className = 'star-wrapper';
-        wrapper.style.position = 'relative';
-        wrapper.style.cursor = 'pointer';
-        wrapper.style.color = '#444';
-        wrapper.innerHTML = '★';
-
-        const full = document.createElement('div');
-        full.className = 'star-full';
-        full.style.position = 'absolute';
-        full.style.top = '0';
-        full.style.left = '0';
-        full.style.overflow = 'hidden';
-        full.style.color = '#ffd700';
-        full.innerHTML = '★';
-
-        // Lógica de visualización
-        if(rating >= i) full.style.width = '100%';
-        else if(rating > i-1) full.style.width = '50%';
-        else full.style.width = '0%';
-
-        wrapper.appendChild(full);
-
-        // Lógica de clic para medias estrellas
-        wrapper.onclick = (e) => {
-            const rect = wrapper.getBoundingClientRect();
-            const val = (e.clientX - rect.left < rect.width / 2) ? i - 0.5 : i;
-            allBooks.find(b => b.id === currentBookId).rating = val;
-            sync(); // Se guarda en segundo plano
-            renderStars(val); // Se actualiza la vista al momento
-        };
-        container.appendChild(wrapper);
-    }
-}
+            renderStars(b.rating || 0);
+        }
 
         function renderStars(rating) {
             const container = document.getElementById('star-container');
@@ -308,76 +281,30 @@ function renderStars(rating) {
             }
         }
 
-        function showCategory(cat) {
-            currentCat = cat;
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-            const btn = document.getElementById('btn-'+cat); if(btn) btn.classList.add('active');
-            closeBookDetail(); renderBooks();
-        }
+        async function toggleFavorite() { const b = allBooks.find(x => x.id === currentBookId); b.favorite = !b.favorite; document.getElementById('heart-svg').classList.toggle('active-heart', b.favorite); await sync(); }
+        async function toggleMark() { const b = allBooks.find(x => x.id === currentBookId); b.marked = !b.marked; document.getElementById('mark-svg').classList.toggle('active-mark', b.marked); await sync(); }
+        async function togglePend() { const b = allBooks.find(x => x.id === currentBookId); b.isPend = !b.isPend; document.getElementById('pend-svg').classList.toggle('active-pend', b.isPend); await sync(); }
 
-        function filterByAuthor(author) { document.getElementById('main-search').value = author; closeBookDetail(); renderBooks(); }
+        function showModal(c) { document.getElementById('modal-dynamic-content').innerHTML = c; document.getElementById('modal-overlay').style.display = 'flex'; }
+        function closeModal() { document.getElementById('modal-overlay').style.display = 'none'; }
 
-        // --- FUNCIONES GUARDADO CON CIERRE ---
+        function openBookModal() { showModal(`<div class="modal-content"><h2>Nuevo Libro</h2><input type="text" id="bt" placeholder="Título"><input type="text" id="ba" placeholder="Autor"><input type="text" id="by" placeholder="Año publicación"><input type="text" id="br" placeholder="Fecha lectura (ej: 20/01/26)"><input type="file" id="bf" accept="image/*"><div style="display:flex;gap:10px;margin-top:10px;"><button onclick="closeModal()" class="btn-action" style="background:#444;flex:1">Cancelar</button><button onclick="saveBook()" class="btn-action" style="background:white;color:black;flex:2">Guardar</button></div></div>`); }
         async function saveBook() {
-            const t = document.getElementById('bt').value;
-            const a = document.getElementById('ba').value.toUpperCase();
-            const y = document.getElementById('by').value; // Año
-            const r = document.getElementById('br').value; // Fecha lectura
-            const f = document.getElementById('bf').files[0];
-            
+            const t = document.getElementById('bt').value, a = document.getElementById('ba').value.toUpperCase(), f = document.getElementById('bf').files[0];
             if(!t) return;
-            
-            // Procesamos la imagen
-            let cov = '📖'; 
-            if(f) cov = await processImg(f);
-            
-            // Cerramos la ventana al instante
-            await sync(); 
-            closeModal();
-            
-            // Añadimos el libro con TODOS los campos recuperados
-            allBooks.push({ 
-                id: Date.now(), 
-                userId: currentUser, 
-                title: t, 
-                author: a, 
-                cover: cov, 
-                year: y,        // Campo recuperado
-                readDate: r,    // Campo recuperado
-                favorite: false, 
-                marked: false, 
-                isPend: false, 
-                rating: 0, 
-                comment: "", 
-                pages: [] 
-            });
-            
-            // Sincronizamos y refrescamos
-            sync(); 
-            renderBooks();
-        }
-                }
-
-        async function saveP() { 
-            const f = document.getElementById('pf').files[0], n = document.getElementById('pn').value, c = document.getElementById('pc').value;
-            if(!f) { alert("Sube una foto"); return; } 
-            
-            // 1. Procesamos la imagen primero
-            let i = await processImg(f); 
-            const book = allBooks.find(x => x.id === currentBookId);
-            if(!book.pages) book.pages = [];
-            
-            // 2. Guardamos los datos
-            book.pages.push({id:Date.now(), num:n, comm:c, img:i});  
-            
-            // 3. LA CLAVE: Refrescamos la vista de páginas directamente sin cerrar y abrir todo
-            openAllPagesView(); 
+            let cov = '📖'; if(f) cov = await processImg(f);
+            allBooks.push({ id: Date.now(), userId: currentUser, title: t, author: a, cover: cov, year: document.getElementById('by').value, readDate: document.getElementById('br').value, favorite: false, marked: false, isPend: false, rating: 0, comment: "", pages: [] });
+            await sync(); renderBooks(); closeModal();
         }
 
+        function openProfileModal(m) {
+            const isEdit = m === 'edit'; const n = isEdit ? currentUser : ""; const currentAv = isEdit ? document.getElementById('current-avatar').innerHTML : "👤";
+            showModal(`<div class="modal-content"><h2>Perfil</h2><div id="pp" style="width:80px;height:80px;background:#333;margin:0 auto 10px;border-radius:4px;display:flex;justify-content:center;align-items:center;font-size:40px;overflow:hidden;">${currentAv}</div><input type="file" id="pu" accept="image/*" onchange="prevA(event)"><input type="text" id="p_n" value="${n}" placeholder="Nombre"><button onclick="exportData()" class="btn-action" style="background:#333;width:100%;margin-bottom:10px">Exportar mi Biblioteca</button><div style="display:flex;gap:10px;"><button onclick="closeModal()" class="btn-action" style="background:#444;flex:1">Cancelar</button><button onclick="saveProf('${m}')" class="btn-action" style="background:white;color:black;flex:2">Guardar</button></div></div>`);
+        }
+        function prevA(e) { const rd = new FileReader(); rd.onload = ev => document.getElementById('pp').innerHTML = `<img src="${ev.target.result}" style="width:100%;height:100%;object-fit:cover;">`; rd.readAsDataURL(e.target.files[0]); }
         async function saveProf(m) {
             const n = document.getElementById('p_n').value.toUpperCase(), a = document.getElementById('pp').innerHTML.includes('<img') ? document.getElementById('pp').querySelector('img').src : "👤";
             if(!n) return;
-            closeModal();
             if(m === 'edit') {
                 const idx = profiles.findIndex(p => p.name === currentUser);
                 allBooks.filter(b => b.userId === currentUser).forEach(b => b.userId = n);
@@ -385,45 +312,34 @@ function renderStars(rating) {
                 document.getElementById('current-username').innerText = n;
                 document.getElementById('current-avatar').innerHTML = a.startsWith('data') ? `<img src="${a}">` : a;
             } else { profiles.push({name:n, avatar:a}); }
-            await sync(); renderProfiles();
+            await sync(); renderProfiles(); closeModal();
         }
 
-        // --- OTROS ---
-        async function toggleFavorite() { const b = allBooks.find(x => x.id === currentBookId); b.favorite = !b.favorite; document.getElementById('heart-svg').classList.toggle('active-heart', b.favorite); await sync(); }
-        async function toggleMark() { const b = allBooks.find(x => x.id === currentBookId); b.marked = !b.marked; document.getElementById('mark-svg').classList.toggle('active-mark', b.marked); await sync(); }
-        async function togglePend() { const b = allBooks.find(x => x.id === currentBookId); b.isPend = !b.isPend; document.getElementById('pend-svg').classList.toggle('active-pend', b.isPend); await sync(); }
-        function showModal(c) { document.getElementById('modal-dynamic-content').innerHTML = c; document.getElementById('modal-overlay').style.display = 'flex'; }
-        function closeModal() { document.getElementById('modal-overlay').style.display = 'none'; }
-        function openBookModal() { 
-    showModal(`<div class="modal-content">
-        <h2>Nuevo Libro</h2>
-        <input type="text" id="bt" placeholder="Título">
-        <input type="text" id="ba" placeholder="Autor">
-        <input type="text" id="by" placeholder="Año publicación">
-        <input type="text" id="br" placeholder="Fecha lectura (ej: 28/01/26)">
-        <input type="file" id="bf" accept="image/*">
-        <div style="display:flex;gap:10px;margin-top:10px;">
-            <button onclick="closeModal()" class="btn-action" style="background:#444;flex:1">Cancelar</button>
-            <button onclick="saveBook()" class="btn-action" style="background:white;color:black;flex:2">Guardar</button>
-        </div>
-    </div>`); 
-}
-        function openProfileModal(m) { const isEdit = m === 'edit'; const n = isEdit ? currentUser : ""; const currentAv = isEdit ? document.getElementById('current-avatar').innerHTML : "👤"; showModal(`<div class="modal-content"><h2>Perfil</h2><div id="pp" style="width:80px;height:80px;background:#333;margin:0 auto 10px;border-radius:4px;display:flex;justify-content:center;align-items:center;font-size:40px;overflow:hidden;">${currentAv}</div><input type="file" id="pu" accept="image/*" onchange="prevA(event)"><input type="text" id="p_n" value="${n}" placeholder="Nombre"><button onclick="exportData()" class="btn-action" style="background:#333;width:100%;margin-bottom:10px">Exportar mi Biblioteca</button><div style="display:flex;gap:10px;"><button onclick="closeModal()" class="btn-action" style="background:#444;flex:1">Cancelar</button><button onclick="saveProf('${m}')" class="btn-action" style="background:white;color:black;flex:2">Guardar</button></div></div>`); }
-        function openAddPageModal() { showModal(`<div class="modal-content"><h2>Añadir Página</h2><input type="file" id="pf" accept="image/*"><input type="number" id="pn" placeholder="Nº"><textarea id="pc" placeholder="Nota"></textarea><div style="display:flex;gap:10px;"><button onclick="openAllPagesView()" class="btn-action" style="background:#444;flex:1">Atrás</button><button onclick="saveP()" class="btn-action" style="background:white;color:black;flex:2">Guardar</button></div></div>`); }
-        function openAllPagesView() { const b = allBooks.find(x => x.id === currentBookId); let content = (b.pages || []).map((p, i) => `<div class="page-scroll-item"><div class="psi-left" onclick="zoomImg(${i})"><img src="${p.img}"></div><div class="psi-right"><h1>Página ${p.num}</h1><p>${p.comm}</p><div style="display:flex;gap:10px;margin-top:auto"><button onclick="editP(${i})" class="btn-action" style="background:#444;color:white">Editar</button><button onclick="delP(${p.id})" class="btn-action" style="background:#e50914;">Borrar</button></div></div></div>`).join(''); showModal(`<div class="all-pages-view"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;"><h2>Páginas de ${b.title}</h2><div><button onclick="openAddPageModal()" class="btn-action" style="background:white;color:black;margin-right:10px;">Añadir</button><button onclick="closeModal()" class="btn-action" style="background:#444;">Volver</button></div></div>${content || '<p>Sin páginas.</p>'}</div>`, "95vw"); }
+        function openAllPagesView() { 
+            const b = allBooks.find(x => x.id === currentBookId); 
+            let content = (b.pages || []).map((p, i) => `<div class="page-scroll-item"><div class="psi-left" onclick="zoomImg(${i})"><img src="${p.img}"></div><div class="psi-right"><h1>Página ${p.num}</h1><p style="white-space:pre-wrap;">${p.comm}</p><div style="display:flex;gap:10px;margin-top:auto"><button onclick="editP(${i})" class="btn-action" style="background:#444;color:white">Editar</button><button onclick="delP(${p.id})" class="btn-action" style="background:#e50914;">Borrar</button></div></div></div>`).join(''); 
+            showModal(`<div class="all-pages-view"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;"><h2>Páginas de ${b.title}</h2><div><button onclick="openAddPageModal()" class="btn-action" style="background:white;color:black;margin-right:10px;">Añadir</button><button onclick="closeModal()" class="btn-action" style="background:#444;">Volver</button></div></div>${content || '<p>Sin páginas.</p>'}</div>`, "95vw"); 
+        }
+        function openAddPageModal() { showModal(`<div class="modal-content"><h2>Nueva Página</h2><input type="file" id="pf" accept="image/*"><input type="number" id="pn" placeholder="Nº de página"><textarea id="pc" placeholder="Nota de la página"></textarea><div style="display:flex;gap:10px;"><button onclick="openAllPagesView()" class="btn-action" style="background:#444;flex:1">Atrás</button><button onclick="saveP()" class="btn-action" style="background:white;color:black;flex:2">Guardar</button></div></div>`); }
+        async function saveP() { 
+            const f = document.getElementById('pf').files[0]; if(!f) return; 
+            let i = await processImg(f); 
+            allBooks.find(x => x.id === currentBookId).pages.push({id:Date.now(), num:document.getElementById('pn').value, comm:document.getElementById('pc').value, img:i}); 
+            await sync(); openAllPagesView(); 
+        }
+
         function zoomImg(idx) { currentZoomIdx = idx; const b = allBooks.find(x => x.id === currentBookId); document.getElementById('zoom-img').src = b.pages[idx].img; document.getElementById('zoom-overlay').style.display = 'flex'; }
         function changeZoomIdx(dir) { const b = allBooks.find(x => x.id === currentBookId); if(!b.pages.length) return; currentZoomIdx = (currentZoomIdx + dir + b.pages.length) % b.pages.length; document.getElementById('zoom-img').src = b.pages[currentZoomIdx].img; }
         function openEditCommentModal() { const b = allBooks.find(x => x.id === currentBookId); showModal(`<div class="modal-content"><h2>Comentario</h2><textarea id="nc" rows="6">${b.comment || ''}</textarea><div style="display:flex;gap:10px;"><button onclick="closeModal()" class="btn-action" style="background:#444;flex:1">Cancelar</button><button onclick="saveC()" class="btn-action" style="background:white;color:black;flex:2">Guardar</button></div></div>`); }
         async function saveC() { const b = allBooks.find(x => x.id === currentBookId); b.comment = document.getElementById('nc').value; document.getElementById('comment-text').innerText = b.comment; await sync(); closeModal(); }
-        function editP(idx) { const b = allBooks.find(x => x.id === currentBookId); const p = b.pages[idx]; showModal(`<div class="modal-content"><h2>Editar</h2><input type="number" id="epn" value="${p.num}"><textarea id="epc">${p.comm}</textarea><button onclick="savePE(${idx})" class="btn-action" style="width:100%">OK</button></div>`); }
+        function editP(idx) { const b = allBooks.find(x => x.id === currentBookId); const p = b.pages[idx]; showModal(`<div class="modal-content"><h2>Editar Página</h2><input type="number" id="epn" value="${p.num}"><textarea id="epc">${p.comm}</textarea><button onclick="savePE(${idx})" class="btn-action" style="width:100%">OK</button></div>`); }
         async function savePE(idx) { const b = allBooks.find(x => x.id === currentBookId); b.pages[idx].num = document.getElementById('epn').value; b.pages[idx].comm = document.getElementById('epc').value; await sync(); openAllPagesView(); }
-        async function delP(id) { if(confirm("¿Borrar?")) { const b = allBooks.find(x => x.id === currentBookId); b.pages = b.pages.filter(p => p.id !== id); openAllPagesView(); } }
-        function logout() { document.getElementById('main-interface').style.display = 'none'; document.getElementById('profile-selection').style.display = 'flex'; }
+        async function delP(id) { if(confirm("¿Borrar?")) { const b = allBooks.find(x => x.id === currentBookId); b.pages = b.pages.filter(p => p.id !== id); await sync(); openAllPagesView(); } }
+        function logout() { location.reload(); }
         function closeBookDetail() { document.getElementById('book-detail-view').style.display = 'none'; document.getElementById('books-grid-container').style.display = 'block'; renderBooks(); }
         function exportData() { const data = allBooks.filter(b => b.userId === currentUser); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(data)], {type:"application/json"})); a.download = `BIBLIOTECA_${currentUser}.json`; a.click(); }
         function openSortModal() { showModal(`<div class="modal-content"><h2>Ordenar</h2><button onclick="sortB('title')" class="nav-btn">Título</button><button onclick="sortB('author')" class="nav-btn">Autor</button><button onclick="closeModal()" class="btn-action" style="width:100%;margin-top:10px">Cerrar</button></div>`); }
         function sortB(k) { allBooks.sort((a,b) => a[k].localeCompare(b[k])); renderBooks(); closeModal(); }
-        function prevA(e) { const rd = new FileReader(); rd.onload = ev => document.getElementById('pp').innerHTML = `<img src="${ev.target.result}" style="width:100%;height:100%;object-fit:cover;">`; rd.readAsDataURL(e.target.files[0]); }
         function openEditBookModal() { const b = allBooks.find(x => x.id === currentBookId); showModal(`<div class="modal-content"><h2>Editar</h2><input type="text" id="et" value="${b.title}"><input type="text" id="ea" value="${b.author}"><input type="text" id="ey" value="${b.year || ''}"><input type="text" id="er" value="${b.readDate || ''}"><div style="display:flex;gap:10px;"><button onclick="closeModal()" class="btn-action" style="background:#444;flex:1">Cancelar</button><button onclick="upB()" class="btn-action" style="background:white;color:black;flex:2">Actualizar</button></div></div>`); }
         async function upB() { const b = allBooks.find(x => x.id === currentBookId); b.title = document.getElementById('et').value; b.author = document.getElementById('ea').value.toUpperCase(); b.year = document.getElementById('ey').value; b.readDate = document.getElementById('er').value; await sync(); openBookDetail(currentBookId); renderBooks(); closeModal(); }
         async function deleteBook() { if(confirm("¿Borrar?")) { allBooks = allBooks.filter(b => b.id !== currentBookId); await sync(); closeBookDetail(); } }
