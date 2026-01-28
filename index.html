@@ -127,7 +127,7 @@
                             </div>
                         </div>
                         <h2 id="det-author" class="clickable-meta" onclick="filterByAuthor(this.innerText)"></h2>
-                        <p id="det-meta" style="color: #888; font-style: italic;"></p>
+                        <p id="det-meta" style="color: #888; font-style: italic; margin: 5px 0;"></p>
                         <div id="star-container" class="star-rating"></div>
                         <div style="background:#222; padding:20px; border-radius:8px; position: relative;">
                             <button onclick="openEditCommentModal()" style="position:absolute; right:10px; top:10px; background:none; border:none; color:var(--gray); cursor:pointer;">✏️</button>
@@ -248,28 +248,34 @@
             const add = document.createElement('div'); add.className = 'book-card'; add.style.border="2px dashed #444"; add.style.display="flex"; add.style.justifyContent="center"; add.style.alignItems="center"; add.style.fontSize="40px"; add.innerText = '+'; add.onclick = openBookModal; grid.appendChild(add);
         }
 
-        function openBookDetail(id) {
-            currentBookId = id; 
-            const b = allBooks.find(x => x.id === id);
-            
-            document.getElementById('books-grid-container').style.display = 'none';
-            document.getElementById('book-detail-view').style.display = 'block';
-            
-            document.getElementById('det-title').innerText = b.title;
-            document.getElementById('det-author').innerText = b.author;
-            
-            // ESTA LÍNEA ES LA QUE RECUPERA LOS FILTROS VISUALES:
-            document.getElementById('det-meta').innerText = (b.year ? "Año: " + b.year : "") + (b.readDate ? " | Leído: " + b.readDate : "");
-            
-            document.getElementById('det-img-container').innerHTML = b.cover.startsWith('data') ? `<img src="${b.cover}">` : b.cover;
-            document.getElementById('comment-text').innerText = b.comment || "Sin comentarios.";
-            
-            document.getElementById('heart-svg').classList.toggle('active-heart', b.favorite);
-            document.getElementById('mark-svg').classList.toggle('active-mark', b.marked);
-            document.getElementById('pend-svg').classList.toggle('active-pend', b.isPend);
-            
-            renderStars(b.rating || 0);
-        }
+function openBookDetail(id) {
+    currentBookId = id; 
+    const b = allBooks.find(x => x.id === id);
+    
+    document.getElementById('books-grid-container').style.display = 'none';
+    document.getElementById('book-detail-view').style.display = 'block';
+    
+    document.getElementById('det-title').innerText = b.title;
+    document.getElementById('det-author').innerText = b.author;
+    
+    // Lógica limpia para mostrar Año y Fecha de lectura
+    let metaText = "";
+    if (b.year) metaText += "Año: " + b.year;
+    if (b.year && b.readDate) metaText += " | ";
+    if (b.readDate) metaText += "Leído: " + b.readDate;
+    
+    document.getElementById('det-meta').innerText = metaText;
+    
+    document.getElementById('det-img-container').innerHTML = b.cover.startsWith('data') ? `<img src="${b.cover}">` : b.cover;
+    document.getElementById('comment-text').innerText = b.comment || "Sin comentarios.";
+    
+    // Actualizar iconos de estado
+    document.getElementById('heart-svg').classList.toggle('active-heart', b.favorite);
+    document.getElementById('mark-svg').classList.toggle('active-mark', b.marked);
+    document.getElementById('pend-svg').classList.toggle('active-pend', b.isPend);
+    
+    renderStars(b.rating || 0);
+}
 
         function renderStars(rating) {
             const container = document.getElementById('star-container');
@@ -416,26 +422,31 @@ async function delP(id) {
                 </div>`); 
             }
         async function upB() { 
-            const b = allBooks.find(x => x.id === currentBookId); 
-            const f = document.getElementById('ef').files[0];
-            
-            // Procesamos la foto si se ha seleccionado una nueva
-            if(f) {
-                b.cover = await processImg(f);
-            }
-            
-            b.title = document.getElementById('et').value; 
-            b.author = document.getElementById('ea').value.toUpperCase(); 
-            b.year = document.getElementById('ey').value; 
-            b.readDate = document.getElementById('er').value; 
-            
-            closeModal(); // Cierra la ventana inmediatamente
-            sync();       // Guarda en segundo plano
-            
-            // REFRESCAMOS TODO:
-            openBookDetail(currentBookId); // Actualiza la ficha abierta
-            renderBooks();                 // Actualiza la foto en la biblioteca (cuadrícula)
+    const b = allBooks.find(x => x.id === currentBookId); 
+    const f = document.getElementById('ef').files[0];
+    
+    // 1. Si hay foto, esperamos SI O SI a que se procese
+    if(f) {
+        const nuevaFoto = await processImg(f);
+        if(nuevaFoto) {
+            b.cover = nuevaFoto;
         }
+    }
+    
+    // 2. Actualizamos el resto de campos
+    b.title = document.getElementById('et').value; 
+    b.author = document.getElementById('ea').value.toUpperCase(); 
+    b.year = document.getElementById('ey').value; 
+    b.readDate = document.getElementById('er').value; 
+    
+    // 3. Sincronizamos con Firebase ANTES de cerrar para asegurar el guardado
+    await sync(); 
+    
+    // 4. Cerramos y refrescamos todo
+    closeModal(); 
+    openBookDetail(currentBookId); 
+    renderBooks(); 
+}
         async function deleteBook() { if(confirm("¿Borrar?")) { allBooks = allBooks.filter(b => b.id !== currentBookId); await sync(); closeBookDetail(); } }
     </script>
 </body>
