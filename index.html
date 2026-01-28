@@ -251,8 +251,44 @@
             document.getElementById('heart-svg').classList.toggle('active-heart', b.favorite);
             document.getElementById('mark-svg').classList.toggle('active-mark', b.marked);
             document.getElementById('pend-svg').classList.toggle('active-pend', b.isPend);
-            renderStars(b.rating || 0);
-        }
+function renderStars(rating) {
+    const container = document.getElementById('star-container');
+    container.innerHTML = '';
+    for(let i = 1; i <= 5; i++) {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'star-wrapper';
+        wrapper.style.position = 'relative';
+        wrapper.style.cursor = 'pointer';
+        wrapper.style.color = '#444';
+        wrapper.innerHTML = '★';
+
+        const full = document.createElement('div');
+        full.className = 'star-full';
+        full.style.position = 'absolute';
+        full.style.top = '0';
+        full.style.left = '0';
+        full.style.overflow = 'hidden';
+        full.style.color = '#ffd700';
+        full.innerHTML = '★';
+
+        // Lógica de visualización
+        if(rating >= i) full.style.width = '100%';
+        else if(rating > i-1) full.style.width = '50%';
+        else full.style.width = '0%';
+
+        wrapper.appendChild(full);
+
+        // Lógica de clic para medias estrellas
+        wrapper.onclick = (e) => {
+            const rect = wrapper.getBoundingClientRect();
+            const val = (e.clientX - rect.left < rect.width / 2) ? i - 0.5 : i;
+            allBooks.find(b => b.id === currentBookId).rating = val;
+            sync(); // Se guarda en segundo plano
+            renderStars(val); // Se actualiza la vista al momento
+        };
+        container.appendChild(wrapper);
+    }
+}
 
         function renderStars(rating) {
             const container = document.getElementById('star-container');
