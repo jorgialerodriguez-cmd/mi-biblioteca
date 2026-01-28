@@ -288,7 +288,7 @@
             
             // Procesamos la imagen (esto es lo que tarda un poco)
             let cov = '📖'; if(f) cov = await processImg(f);
-            
+            await sync()
             // Una vez procesada, cerramos la ventana al instante
             closeModal();
             
