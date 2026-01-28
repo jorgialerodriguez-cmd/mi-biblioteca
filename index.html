@@ -188,7 +188,7 @@
                     img.src = e.target.result;
                     img.onload = () => {
                         const canvas = document.createElement('canvas');
-                        const MAX_WIDTH = 800;
+                        const MAX_WIDTH = 800; // Calidad óptima para no colgar Firebase
                         let width = img.width; let height = img.height;
                         if (width > MAX_WIDTH) { height *= MAX_WIDTH / width; width = MAX_WIDTH; }
                         canvas.width = width; canvas.height = height;
@@ -416,26 +416,26 @@ async function delP(id) {
                 </div>`); 
             }
         async function upB() { 
-        const b = allBooks.find(x => x.id === currentBookId); 
-        const f = document.getElementById('ef').files[0];
-        
-        if(f) {
-            b.cover = await processImg(f);
+            const b = allBooks.find(x => x.id === currentBookId); 
+            const f = document.getElementById('ef').files[0];
+            
+            // Procesamos la foto si se ha seleccionado una nueva
+            if(f) {
+                b.cover = await processImg(f);
+            }
+            
+            b.title = document.getElementById('et').value; 
+            b.author = document.getElementById('ea').value.toUpperCase(); 
+            b.year = document.getElementById('ey').value; 
+            b.readDate = document.getElementById('er').value; 
+            
+            closeModal(); // Cierra la ventana inmediatamente
+            sync();       // Guarda en segundo plano
+            
+            // REFRESCAMOS TODO:
+            openBookDetail(currentBookId); // Actualiza la ficha abierta
+            renderBooks();                 // Actualiza la foto en la biblioteca (cuadrícula)
         }
-        
-        // Actualizamos los campos de texto
-        b.title = document.getElementById('et').value; 
-        b.author = document.getElementById('ea').value.toUpperCase(); 
-        b.year = document.getElementById('ey').value;      // Actualiza Año
-        b.readDate = document.getElementById('er').value;  // Actualiza Fecha lectura
-        
-        closeModal();
-        sync(); // Sincroniza en segundo plano
-        
-        // REFRESCAMOS LA FICHA:
-        openBookDetail(currentBookId); 
-        renderBooks(); 
-    }
         async function deleteBook() { if(confirm("¿Borrar?")) { allBooks = allBooks.filter(b => b.id !== currentBookId); await sync(); closeBookDetail(); } }
     </script>
 </body>
