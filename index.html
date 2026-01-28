@@ -292,9 +292,20 @@
         async function saveBook() {
             const t = document.getElementById('bt').value, a = document.getElementById('ba').value.toUpperCase(), f = document.getElementById('bf').files[0];
             if(!t) return;
+            
+            // Procesamos la imagen (esto es lo que tarda un poco)
             let cov = '📖'; if(f) cov = await processImg(f);
+            
+            // Una vez procesada, cerramos la ventana al instante
+            await sync();
+            closeModal();
+            
+            // Añadimos al array local
             allBooks.push({ id: Date.now(), userId: currentUser, title: t, author: a, cover: cov, year: document.getElementById('by').value, readDate: document.getElementById('br').value, favorite: false, marked: false, isPend: false, rating: 0, comment: "", pages: [] });
-            await sync(); renderBooks(); closeModal();
+            
+            // Sincronizamos en segundo plano y refrescamos la cuadrícula
+            sync(); 
+            renderBooks();
         }
 
         function openProfileModal(m) {
