@@ -303,24 +303,40 @@ function openBookDetail(id) {
         function closeModal() { document.getElementById('modal-overlay').style.display = 'none'; }
 
         function openBookModal() { showModal(`<div class="modal-content"><h2>Nuevo Libro</h2><input type="text" id="bt" placeholder="Título"><input type="text" id="ba" placeholder="Autor"><input type="text" id="by" placeholder="Año publicación"><input type="text" id="br" placeholder="Fecha lectura (ej: 20/01/26)"><input type="file" id="bf" accept="image/*"><div style="display:flex;gap:10px;margin-top:10px;"><button onclick="closeModal()" class="btn-action" style="background:#444;flex:1">Cancelar</button><button onclick="saveBook()" class="btn-action" style="background:white;color:black;flex:2">Guardar</button></div></div>`); }
-        async function saveBook() {
-            const t = document.getElementById('bt').value, a = document.getElementById('ba').value.toUpperCase(), f = document.getElementById('bf').files[0];
-            if(!t) return;
-            
-            // Procesamos la imagen (esto es lo que tarda un poco)
-            let cov = '📖'; if(f) cov = await processImg(f);
-            
-            // Una vez procesada, cerramos la ventana al instante
-            await sync();
-            closeModal();
-            
-            // Añadimos al array local
-            allBooks.push({ id: Date.now(), userId: currentUser, title: t, author: a, cover: cov, year: document.getElementById('by').value, readDate: document.getElementById('br').value, favorite: false, marked: false, isPend: false, rating: 0, comment: "", pages: [] });
-            
-            // Sincronizamos en segundo plano y refrescamos la cuadrícula
-            sync(); 
-            renderBooks();
-        }
+async function saveBook() {
+    const t = document.getElementById('bt').value;
+    const a = document.getElementById('ba').value.toUpperCase();
+    const y = document.getElementById('by').value;
+    const r = document.getElementById('br').value;
+    const f = document.getElementById('bf').files[0];
+    
+    if(!t) return;
+    
+    let cov = '📖'; 
+    if(f) cov = await processImg(f); // Esperamos a la imagen
+    
+    const nuevoLibro = { 
+        id: Date.now(), 
+        userId: currentUser, 
+        title: t, 
+        author: a, 
+        cover: cov, 
+        year: y,
+        readDate: r,
+        favorite: false, 
+        marked: false, 
+        isPend: false, 
+        rating: 0, 
+        comment: "", 
+        pages: [] 
+    };
+
+    allBooks.push(nuevoLibro);
+    
+    await sync(); 
+    closeModal();
+    renderBooks();
+}
 
         function openProfileModal(m) {
             const isEdit = m === 'edit'; const n = isEdit ? currentUser : ""; const currentAv = isEdit ? document.getElementById('current-avatar').innerHTML : "👤";
@@ -421,32 +437,29 @@ async function delP(id) {
                     </div>
                 </div>`); 
             }
-        async function upB() { 
-    const b = allBooks.find(x => x.id === currentBookId); 
-    const f = document.getElementById('ef').files[0];
-    
-    // 1. Si hay foto, esperamos SI O SI a que se procese
-    if(f) {
-        const nuevaFoto = await processImg(f);
-        if(nuevaFoto) {
-            b.cover = nuevaFoto;
-        }
-    }
-    
-    // 2. Actualizamos el resto de campos
-    b.title = document.getElementById('et').value; 
-    b.author = document.getElementById('ea').value.toUpperCase(); 
-    b.year = document.getElementById('ey').value; 
-    b.readDate = document.getElementById('er').value; 
-    
-    // 3. Sincronizamos con Firebase ANTES de cerrar para asegurar el guardado
-    await sync(); 
-    
-    // 4. Cerramos y refrescamos todo
-    closeModal(); 
-    openBookDetail(currentBookId); 
-    renderBooks(); 
-}
+            async function upB() { 
+                const b = allBooks.find(x => x.id === currentBookId); 
+                const f = document.getElementById('ef').files[0];
+                
+                // Si el usuario eligió una foto nueva, esperamos a que se procese
+                if(f) {
+                    const nuevaFoto = await processImg(f);
+                    if(nuevaFoto) b.cover = nuevaFoto;
+                }
+                
+                // Actualizamos el resto de campos
+                b.title = document.getElementById('et').value; 
+                b.author = document.getElementById('ea').value.toUpperCase(); 
+                b.year = document.getElementById('ey').value; 
+                b.readDate = document.getElementById('er').value; 
+                
+                // GUARDADO SEGURO
+                await sync(); 
+                
+                closeModal(); 
+                openBookDetail(currentBookId); // Esto refresca la foto en la ficha
+                renderBooks();                 // Esto refresca la foto en la biblioteca
+            }
         async function deleteBook() { if(confirm("¿Borrar?")) { allBooks = allBooks.filter(b => b.id !== currentBookId); await sync(); closeBookDetail(); } }
     </script>
 </body>
