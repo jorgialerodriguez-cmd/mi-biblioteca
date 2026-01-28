@@ -249,17 +249,25 @@
         }
 
         function openBookDetail(id) {
-            currentBookId = id; const b = allBooks.find(x => x.id === id);
+            currentBookId = id; 
+            const b = allBooks.find(x => x.id === id);
+            
             document.getElementById('books-grid-container').style.display = 'none';
             document.getElementById('book-detail-view').style.display = 'block';
+            
             document.getElementById('det-title').innerText = b.title;
             document.getElementById('det-author').innerText = b.author;
+            
+            // ESTA LÍNEA ES LA QUE RECUPERA LOS FILTROS VISUALES:
             document.getElementById('det-meta').innerText = (b.year ? "Año: " + b.year : "") + (b.readDate ? " | Leído: " + b.readDate : "");
+            
             document.getElementById('det-img-container').innerHTML = b.cover.startsWith('data') ? `<img src="${b.cover}">` : b.cover;
-            document.getElementById('comment-text').innerText = b.comment || "Sin comentario.";
+            document.getElementById('comment-text').innerText = b.comment || "Sin comentarios.";
+            
             document.getElementById('heart-svg').classList.toggle('active-heart', b.favorite);
             document.getElementById('mark-svg').classList.toggle('active-mark', b.marked);
             document.getElementById('pend-svg').classList.toggle('active-pend', b.isPend);
+            
             renderStars(b.rating || 0);
         }
 
@@ -332,20 +340,60 @@
             showModal(`<div class="all-pages-view"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;"><h2>Páginas de ${b.title}</h2><div><button onclick="openAddPageModal()" class="btn-action" style="background:white;color:black;margin-right:10px;">Añadir</button><button onclick="closeModal()" class="btn-action" style="background:#444;">Volver</button></div></div>${content || '<p>Sin páginas.</p>'}</div>`, "95vw"); 
         }
         function openAddPageModal() { showModal(`<div class="modal-content"><h2>Nueva Página</h2><input type="file" id="pf" accept="image/*"><input type="number" id="pn" placeholder="Nº de página"><textarea id="pc" placeholder="Nota de la página"></textarea><div style="display:flex;gap:10px;"><button onclick="openAllPagesView()" class="btn-action" style="background:#444;flex:1">Atrás</button><button onclick="saveP()" class="btn-action" style="background:white;color:black;flex:2">Guardar</button></div></div>`); }
-        async function saveP() { 
-            const f = document.getElementById('pf').files[0]; if(!f) return; 
-            let i = await processImg(f); 
-            allBooks.find(x => x.id === currentBookId).pages.push({id:Date.now(), num:document.getElementById('pn').value, comm:document.getElementById('pc').value, img:i}); 
-            openAllPagesView(); 
-        }
+// 1. GUARDAR PÁGINA NUEVA
+async function saveP() { 
+    const f = document.getElementById('pf').files[0], 
+          n = document.getElementById('pn').value, 
+          c = document.getElementById('pc').value;
+    
+    if(!f) { alert("Sube una foto"); return; } 
+    
+    // Cerramos el modal de "Añadir" inmediatamente
+    closeModal();
+    
+    // Procesamos la imagen en segundo plano
+    let i = await processImg(f); 
+    const book = allBooks.find(x => x.id === currentBookId);
+    if(!book.pages) book.pages = [];
+    
+    book.pages.push({id:Date.now(), num:n, comm:c, img:i}); 
+    
+    sync(); // Sincroniza sin esperar (segundo plano)
+    openAllPagesView(); // Refresca la lista de páginas al instante
+}
+
+// 2. ACTUALIZAR PÁGINA EDITADA
+async function savePE(idx) { 
+    const b = allBooks.find(x => x.id === currentBookId); 
+    
+    // Guardamos los nuevos valores
+    b.pages[idx].num = document.getElementById('epn').value; 
+    b.pages[idx].comm = document.getElementById('epc').value; 
+    
+    // Cerramos el modal de edición
+    closeModal();
+    
+    sync(); // Sincroniza en segundo plano
+    openAllPagesView(); // Refresca la lista para ver los cambios
+}
+
+// 3. BORRAR PÁGINA
+async function delP(id) { 
+    if(confirm("¿Borrar esta página?")) { 
+        const b = allBooks.find(x => x.id === currentBookId); 
+        b.pages = b.pages.filter(p => p.id !== id); 
+        
+        // En el borrado no hay modal que cerrar, solo refrescar
+        sync(); 
+        openAllPagesView(); 
+    } 
+}
 
         function zoomImg(idx) { currentZoomIdx = idx; const b = allBooks.find(x => x.id === currentBookId); document.getElementById('zoom-img').src = b.pages[idx].img; document.getElementById('zoom-overlay').style.display = 'flex'; }
         function changeZoomIdx(dir) { const b = allBooks.find(x => x.id === currentBookId); if(!b.pages.length) return; currentZoomIdx = (currentZoomIdx + dir + b.pages.length) % b.pages.length; document.getElementById('zoom-img').src = b.pages[currentZoomIdx].img; }
         function openEditCommentModal() { const b = allBooks.find(x => x.id === currentBookId); showModal(`<div class="modal-content"><h2>Comentario</h2><textarea id="nc" rows="6">${b.comment || ''}</textarea><div style="display:flex;gap:10px;"><button onclick="closeModal()" class="btn-action" style="background:#444;flex:1">Cancelar</button><button onclick="saveC()" class="btn-action" style="background:white;color:black;flex:2">Guardar</button></div></div>`); }
         async function saveC() { const b = allBooks.find(x => x.id === currentBookId); b.comment = document.getElementById('nc').value; document.getElementById('comment-text').innerText = b.comment; await sync(); closeModal(); }
         function editP(idx) { const b = allBooks.find(x => x.id === currentBookId); const p = b.pages[idx]; showModal(`<div class="modal-content"><h2>Editar Página</h2><input type="number" id="epn" value="${p.num}"><textarea id="epc">${p.comm}</textarea><button onclick="savePE(${idx})" class="btn-action" style="width:100%">OK</button></div>`); }
-        async function savePE(idx) { const b = allBooks.find(x => x.id === currentBookId); b.pages[idx].num = document.getElementById('epn').value; b.pages[idx].comm = document.getElementById('epc').value; await sync(); openAllPagesView(); }
-        async function delP(id) { if(confirm("¿Borrar?")) { const b = allBooks.find(x => x.id === currentBookId); b.pages = b.pages.filter(p => p.id !== id); openAllPagesView(); } }
         function logout() { location.reload(); }
         function closeBookDetail() { document.getElementById('book-detail-view').style.display = 'none'; document.getElementById('books-grid-container').style.display = 'block'; renderBooks(); }
         function exportData() { const data = allBooks.filter(b => b.userId === currentUser); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(data)], {type:"application/json"})); a.download = `BIBLIOTECA_${currentUser}.json`; a.click(); }
@@ -367,7 +415,27 @@
                     </div>
                 </div>`); 
             }
-        async function upB() { const b = allBooks.find(x => x.id === currentBookId); b.title = document.getElementById('et').value; b.author = document.getElementById('ea').value.toUpperCase(); b.year = document.getElementById('ey').value; b.readDate = document.getElementById('er').value; await sync(); openBookDetail(currentBookId); renderBooks(); closeModal(); }
+        async function upB() { 
+        const b = allBooks.find(x => x.id === currentBookId); 
+        const f = document.getElementById('ef').files[0];
+        
+        if(f) {
+            b.cover = await processImg(f);
+        }
+        
+        // Actualizamos los campos de texto
+        b.title = document.getElementById('et').value; 
+        b.author = document.getElementById('ea').value.toUpperCase(); 
+        b.year = document.getElementById('ey').value;      // Actualiza Año
+        b.readDate = document.getElementById('er').value;  // Actualiza Fecha lectura
+        
+        closeModal();
+        sync(); // Sincroniza en segundo plano
+        
+        // REFRESCAMOS LA FICHA:
+        openBookDetail(currentBookId); 
+        renderBooks(); 
+    }
         async function deleteBook() { if(confirm("¿Borrar?")) { allBooks = allBooks.filter(b => b.id !== currentBookId); await sync(); closeBookDetail(); } }
     </script>
 </body>
