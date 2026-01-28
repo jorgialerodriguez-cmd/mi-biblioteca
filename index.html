@@ -301,8 +301,7 @@
             if(!book.pages) book.pages = [];
             
             // 2. Guardamos los datos
-            book.pages.push({id:Date.now(), num:n, comm:c, img:i}); 
-            await sync(); 
+            book.pages.push({id:Date.now(), num:n, comm:c, img:i});  
             
             // 3. LA CLAVE: Refrescamos la vista de páginas directamente sin cerrar y abrir todo
             openAllPagesView(); 
@@ -338,7 +337,7 @@
         async function saveC() { const b = allBooks.find(x => x.id === currentBookId); b.comment = document.getElementById('nc').value; document.getElementById('comment-text').innerText = b.comment; await sync(); closeModal(); }
         function editP(idx) { const b = allBooks.find(x => x.id === currentBookId); const p = b.pages[idx]; showModal(`<div class="modal-content"><h2>Editar</h2><input type="number" id="epn" value="${p.num}"><textarea id="epc">${p.comm}</textarea><button onclick="savePE(${idx})" class="btn-action" style="width:100%">OK</button></div>`); }
         async function savePE(idx) { const b = allBooks.find(x => x.id === currentBookId); b.pages[idx].num = document.getElementById('epn').value; b.pages[idx].comm = document.getElementById('epc').value; await sync(); openAllPagesView(); }
-        async function delP(id) { if(confirm("¿Borrar?")) { const b = allBooks.find(x => x.id === currentBookId); b.pages = b.pages.filter(p => p.id !== id); await sync(); openAllPagesView(); } }
+        async function delP(id) { if(confirm("¿Borrar?")) { const b = allBooks.find(x => x.id === currentBookId); b.pages = b.pages.filter(p => p.id !== id); openAllPagesView(); } }
         function logout() { document.getElementById('main-interface').style.display = 'none'; document.getElementById('profile-selection').style.display = 'flex'; }
         function closeBookDetail() { document.getElementById('book-detail-view').style.display = 'none'; document.getElementById('books-grid-container').style.display = 'block'; renderBooks(); }
         function exportData() { const data = allBooks.filter(b => b.userId === currentUser); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(data)], {type:"application/json"})); a.download = `BIBLIOTECA_${currentUser}.json`; a.click(); }
