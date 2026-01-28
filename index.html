@@ -325,7 +325,7 @@
             const f = document.getElementById('pf').files[0]; if(!f) return; 
             let i = await processImg(f); 
             allBooks.find(x => x.id === currentBookId).pages.push({id:Date.now(), num:document.getElementById('pn').value, comm:document.getElementById('pc').value, img:i}); 
-            await sync(); openAllPagesView(); 
+            openAllPagesView(); 
         }
 
         function zoomImg(idx) { currentZoomIdx = idx; const b = allBooks.find(x => x.id === currentBookId); document.getElementById('zoom-img').src = b.pages[idx].img; document.getElementById('zoom-overlay').style.display = 'flex'; }
@@ -334,7 +334,7 @@
         async function saveC() { const b = allBooks.find(x => x.id === currentBookId); b.comment = document.getElementById('nc').value; document.getElementById('comment-text').innerText = b.comment; await sync(); closeModal(); }
         function editP(idx) { const b = allBooks.find(x => x.id === currentBookId); const p = b.pages[idx]; showModal(`<div class="modal-content"><h2>Editar Página</h2><input type="number" id="epn" value="${p.num}"><textarea id="epc">${p.comm}</textarea><button onclick="savePE(${idx})" class="btn-action" style="width:100%">OK</button></div>`); }
         async function savePE(idx) { const b = allBooks.find(x => x.id === currentBookId); b.pages[idx].num = document.getElementById('epn').value; b.pages[idx].comm = document.getElementById('epc').value; await sync(); openAllPagesView(); }
-        async function delP(id) { if(confirm("¿Borrar?")) { const b = allBooks.find(x => x.id === currentBookId); b.pages = b.pages.filter(p => p.id !== id); await sync(); openAllPagesView(); } }
+        async function delP(id) { if(confirm("¿Borrar?")) { const b = allBooks.find(x => x.id === currentBookId); b.pages = b.pages.filter(p => p.id !== id); openAllPagesView(); } }
         function logout() { location.reload(); }
         function closeBookDetail() { document.getElementById('book-detail-view').style.display = 'none'; document.getElementById('books-grid-container').style.display = 'block'; renderBooks(); }
         function exportData() { const data = allBooks.filter(b => b.userId === currentUser); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(data)], {type:"application/json"})); a.download = `BIBLIOTECA_${currentUser}.json`; a.click(); }
