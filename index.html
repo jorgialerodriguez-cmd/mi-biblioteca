@@ -11,7 +11,10 @@
         :root { --bg-color: #141414; --sidebar-color: #000; --accent: #e50914; --text: white; --gray: #b3b3b3; --sidebar-width: 250px; }
         body { background: var(--bg-color); color: var(--text); font-family: 'Helvetica Neue', Arial; margin: 0; overflow: hidden; height: 100vh; }
         
-        #profile-selection { display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; background: var(--bg-color); position: fixed; width: 100%; top: 0; z-index: 2000; }
+        <div id="profile-selection" style="display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; background: #141414; position: fixed; width: 100%; top: 0; z-index: 10000;">
+        <h1 style="color: #e50914; font-size: 3rem; letter-spacing: 2px; font-weight: 900; margin-bottom: 40px;">BOOKFLIX</h1>
+        <div class="profiles-gate" id="profiles-container"></div>
+        </div>
         .profiles-gate { display: flex; gap: 20px; flex-wrap: wrap; justify-content: center; }
         .profile-card { cursor: pointer; text-align: center; width: 120px; }
         .avatar { width: 120px; height: 120px; background: #333; border-radius: 4px; display: flex; justify-content: center; align-items: center; font-size: 60px; overflow: hidden; border: 3px solid transparent; transition: 0.2s; }
@@ -27,8 +30,14 @@
 @media (max-width: 768px) {
     /* Perfiles: Siempre visibles al inicio */
     #profile-selection { display: flex !important; }
-    .profiles-gate { flex-direction: row !important; flex-wrap: wrap; justify-content: center; gap: 20px; }
-
+    /* Perfiles: Forzamos disposición horizontal en móvil */
+        .profiles-gate { 
+            display: flex !important; 
+            flex-direction: row !important; 
+            flex-wrap: wrap !important; 
+            justify-content: center !important; 
+            gap: 15px !important; 
+        }
     /* Interfaz Principal: Se activa al elegir perfil */
     #main-interface { 
         display: none; 
