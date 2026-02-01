@@ -25,6 +25,11 @@
         .sidebar-avatar img { width: 100%; height: 100%; object-fit: cover; }
 
 @media (max-width: 768px) {
+    #profile-selection {
+        display: flex !important;
+        flex-direction: column !important;
+        z-index: 1000;
+    }
     /* Forzamos que la interfaz sea un bloque vertical */
     #main-interface { display: flex !important; flex-direction: column !important; height: 100vh !important; }
 
