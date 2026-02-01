@@ -265,8 +265,13 @@
         function accessProfile(name, avatar) {
             currentUser = name;
             document.getElementById('profile-selection').style.display = 'none';
-            document.getElementById('main-interface').style.display = 'flex';
-            document.querySelector('.sidebar').classList.add('mobile-active');
+            document.getElementById('main-interface').style.display = 'grid';
+            
+            // Activa la barra en móvil añadiendo la clase
+            document.querySelector('.sidebar').classList.add('mobile-active'); 
+            
+            document.getElementById('current-username').innerText = name;
+            document.getElementById('current-avatar').innerHTML = avatar.startsWith('data') ? `<img src="${avatar}">` : avatar;
             showCategory('all');
         }
 
