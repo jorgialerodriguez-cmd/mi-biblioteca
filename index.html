@@ -25,90 +25,109 @@
         .sidebar-avatar img { width: 100%; height: 100%; object-fit: cover; }
 
 @media (max-width: 768px) {
-    /* 1. Reset de estructura: Aprovechar todo el ancho */
+    /* 1. Lógica de visibilidad: La barra lateral (ahora inferior) oculta en el login */
+    #profile-selection[style*="display: flex"] ~ #main-interface .sidebar {
+        display: none !important;
+    }
+
     #main-interface { 
         display: flex !important; 
         flex-direction: column !important; 
         height: 100vh !important;
     }
 
-    /* 2. Barra de navegación inferior: Sólida y profesional */
+    /* 2. Barra inferior fija (NO flota, es parte de la estructura) */
     .sidebar { 
-        order: 2; /* Se coloca abajo */
-        position: fixed !important;
-        bottom: 0 !important;
-        left: 0 !important;
+        order: 2;
+        position: relative !important;
         width: 100% !important;
-        height: 65px !important;
+        height: 70px !important;
         flex-direction: row !important;
         padding: 0 !important;
-        background: #050505 !important;
-        border-top: 1px solid #222 !important;
+        background: #000 !important;
+        border-top: 1px solid #333 !important;
         justify-content: space-around !important;
+        align-items: center !important;
         z-index: 5000 !important;
     }
 
     .sidebar-user, .nav-text { display: none !important; }
-    
-    .nav-btn { 
-        flex: 1 !important;
-        justify-content: center !important;
-        height: 100% !important;
-        border-radius: 0 !important;
-        gap: 0 !important;
-    }
-    
-    .nav-btn span:first-child { font-size: 1.5rem !important; }
-    .nav-btn.active { border-top: 3px solid var(--accent); background: transparent !important; }
+    .nav-btn { flex: 1; justify-content: center; height: 100%; border-radius: 0; }
+    .nav-btn.active { border-top: 3px solid var(--accent); }
 
-    /* 3. Área de contenido: Sin huecos muertos */
+    /* 3. Contenedor de libros: 2 columnas, portadas completas */
     #content-area { 
-        padding: 15px !important;
-        padding-bottom: 80px !important; /* Solo el espacio de la barra */
-        height: 100vh !important;
+        order: 1;
+        flex: 1;
         overflow-y: auto !important;
+        padding: 15px !important;
+        box-sizing: border-box;
     }
 
-    /* 4. Parrilla de libros: Más grandes */
     .books-grid { 
-        grid-template-columns: repeat(2, 1fr) !important; /* Dos libros por fila */
-        gap: 12px !important; 
+        grid-template-columns: repeat(2, 1fr) !important; 
+        gap: 15px !important; 
     }
     
-    .book-card { height: 260px !important; }
+    .book-card { 
+        height: auto !important; 
+        background: transparent !important;
+        border: none !important;
+    }
+    
+    .book-cover { 
+        height: 230px !important; /* Altura ideal para ver la portada completa */
+        border-radius: 8px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    }
+    .book-cover img { object-fit: contain !important; background: #1a1a1a; }
 
-    /* 5. Ficha del libro: Pantalla completa real */
+    /* 4. Ficha del libro: TODO EL ANCHO y vertical */
     #book-detail-view {
-        padding: 0 !important; /* Quitamos padding externo */
-        z-index: 5100 !important;
+        padding: 0 !important;
+        z-index: 6000 !important;
     }
 
     .detail-layout { 
-        flex-direction: column !important;
-        gap: 0 !important;
+        flex-direction: column !important; 
+        display: block !important; 
     }
 
     .detail-left { 
         width: 100% !important; 
-        height: 45vh !important; /* Casi media pantalla para la foto */
-        border-radius: 0 !important;
+        height: 50vh !important; /* Portada protagonista */
+        background: #000;
+        border-radius: 0;
     }
-    
-    .detail-left img { width: 100%; height: 100%; object-fit: cover; }
+    .detail-left img { object-fit: contain !important; width: 100%; height: 100%; }
 
     .detail-right { 
+        width: 100% !important; 
         padding: 20px !important;
-        padding-bottom: 100px !important;
+        box-sizing: border-box !important;
+        display: block !important;
     }
 
-    .detail-right h1 { font-size: 1.8rem !important; line-height: 1.1; }
+    /* Información ocupando todo el ancho */
+    #det-title { font-size: 2.2rem !important; width: 100%; margin-bottom: 5px; }
+    #det-author { font-size: 1.3rem !important; width: 100%; margin-bottom: 10px; }
+    #det-meta { width: 100%; margin-bottom: 15px; }
+    
+    .star-rating { margin-bottom: 20px; }
 
-    /* Botones de acción en móvil: Uno al lado del otro */
+    /* Botones finales en el móvil: Ocupando ancho completo */
+    .detail-right button.btn-action[onclick*="openAllPagesView"] {
+        width: 100% !important;
+        margin-bottom: 20px;
+        padding: 15px;
+    }
+
     .detail-right div[style*="margin-top:auto"] {
         display: grid !important;
         grid-template-columns: 1fr 1fr !important;
         gap: 10px !important;
-        margin-top: 25px !important;
+        margin-top: 30px !important;
+        padding-bottom: 40px;
     }
 }    .detail-layout { 
         flex-direction: column !important;}        .nav-btn { background: transparent; border: none; color: var(--gray); text-align: left; padding: 15px 12px; font-size: 1.1rem; cursor: pointer; width: 100%; display: flex; align-items: center; gap: 15px; transition: 0.2s; border-radius: 8px; }
