@@ -25,52 +25,58 @@
         .sidebar-avatar img { width: 100%; height: 100%; object-fit: cover; }
 
 @media (max-width: 768px) {
-    /* Permitir que el scroll llegue hasta el final real del contenido */
+    /* Estructura principal */
+    #main-interface { 
+        display: block !important; /* Cambiamos a bloque para scroll natural */
+    }
+
+    /* La barra vuelve a ser horizontal abajo */
+    .sidebar { 
+        position: fixed !important; 
+        bottom: 0 !important; 
+        left: 0 !important; 
+        width: 100% !important; 
+        height: 70px !important; 
+        flex-direction: row !important; 
+        padding: 0 !important; 
+        margin: 0 !important;
+        border-right: none !important; 
+        border-top: 1px solid #333 !important; 
+        justify-content: space-around !important; 
+        align-items: center !important; 
+        background: #000 !important; 
+        z-index: 5000 !important; 
+    }
+
+    /* Ocultamos textos para que quepan los iconos */
+    .sidebar-user, .nav-text { display: none !important; }
+    
+    .nav-btn { 
+        width: auto !important; 
+        padding: 10px !important; 
+        flex-direction: column !important;
+        background: transparent !important;
+    }
+    
+    .nav-btn span:first-child { font-size: 1.6rem !important; }
+
+    /* El contenido ahora respeta la barra */
+    #content-area { 
+        padding: 20px 15px 100px 15px !important; 
+        height: calc(100vh - 70px) !important;
+        overflow-y: auto !important;
+    }
+
+    /* Ajuste de la ficha del libro: scroll infinito hacia abajo */
     #book-detail-view {
-        padding: 15px 15px 120px 15px !important;
-        height: auto !important;
-        min-height: 100vh;
-        display: block; /* Cambiamos a block para que el scroll fluya mejor */
+        padding: 20px 20px 120px 20px !important; /* Espacio extra al final */
+        position: fixed !important;
+        height: 100vh !important;
+        overflow-y: auto !important;
     }
 
-    .detail-layout {
-        flex-direction: column !important;
-        gap: 20px;
-        display: flex !important;
-    }
-
-    .detail-left {
-        width: 100% !important;
-        height: 320px !important;
-        flex-shrink: 0;
-    }
-
-    .detail-right {
-        width: 100% !important;
-        padding-bottom: 40px !important; /* Espacio extra para los botones */
-        display: flex !important;
-        flex-direction: column !important;
-    }
-
-    /* Aseguramos que el contenedor de botones de Editar/Borrar sea visible */
-    .detail-right > div:last-child {
-        margin-top: 30px !important;
-        display: flex !important;
-        flex-direction: row !important;
-        gap: 10px;
-        padding-bottom: 20px;
-    }
-
-    /* Ajuste de la barra inferior para que no tape nada */
-    .sidebar {
-        height: 70px;
-        z-index: 2000;
-    }
-
-    #content-area {
-        padding-bottom: 100px !important;
-    }
-}        .nav-btn { background: transparent; border: none; color: var(--gray); text-align: left; padding: 15px 12px; font-size: 1.1rem; cursor: pointer; width: 100%; display: flex; align-items: center; gap: 15px; transition: 0.2s; border-radius: 8px; }
+    .detail-layout { 
+        flex-direction: column !important;}        .nav-btn { background: transparent; border: none; color: var(--gray); text-align: left; padding: 15px 12px; font-size: 1.1rem; cursor: pointer; width: 100%; display: flex; align-items: center; gap: 15px; transition: 0.2s; border-radius: 8px; }
         .nav-btn.active { color: white; background: #222; }
 
         #content-area { padding: 40px; overflow-y: auto; position: relative; }
