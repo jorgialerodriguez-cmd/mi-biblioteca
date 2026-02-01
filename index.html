@@ -28,15 +28,26 @@
     #main-interface { 
         grid-template-columns: 1fr; 
         height: 100vh;
-        overflow: hidden; /* Mantenemos el marco fijo */
+        display: flex;
+        flex-direction: column;
     }
     
+    /* Área de contenido: ahora el scroll termina antes de la barra */
+    #content-area { 
+        flex: 1;
+        padding: 20px 15px 120px 15px !important; /* Aumentamos a 120px para liberar los botones */
+        overflow-y: auto !important;
+        -webkit-overflow-scrolling: touch;
+        box-sizing: border-box;
+    }
+
+    /* Barra inferior: fija y sin pisar contenido */
     .sidebar { 
         position: fixed; 
         bottom: 0; 
         left: 0; 
         width: 100% !important; 
-        height: 70px; /* Altura fija para la barra */
+        height: 75px; 
         flex-direction: row; 
         padding: 0; 
         border-right: none; 
@@ -54,54 +65,36 @@
         padding: 10px !important; 
         margin: 0 !important; 
         flex-direction: column;
-        gap: 2px;
     }
     
-    .nav-btn span:first-child { font-size: 1.5rem !important; }
+    .nav-btn span:first-child { font-size: 1.6rem !important; }
 
-    /* AJUSTE CRÍTICO DE SCROLL Y VISIBILIDAD */
-    #content-area { 
-        padding: 20px 15px 100px 15px !important; /* El padding de 100px abajo evita que la barra tape los botones */
-        height: 100vh;
-        overflow-y: auto !important; /* Forzamos el scroll vertical */
-        -webkit-overflow-scrolling: touch;
-        box-sizing: border-box;
-    }
-
+    /* Ajuste de la ficha del libro en móvil */
     .detail-layout { 
         flex-direction: column !important; 
-        gap: 20px;
+        display: flex !important;
     }
 
     .detail-left { 
         width: 100% !important; 
-        height: 300px !important; 
+        height: 350px !important; 
+        margin-bottom: 10px;
     }
 
     .detail-right { 
         width: 100% !important; 
-        padding: 0 0 40px 0 !important; 
+        padding-bottom: 50px !important; /* Espacio extra para que los botones de abajo respiren */
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
     }
 
-    /* DISEÑO PÁGINAS ESPECIALES MÓVIL */
-    .page-scroll-item { 
-        flex-direction: column !important; 
-        min-height: auto !important;
-        margin-bottom: 40px !important;
-    }
-    
-    .psi-left { 
-        width: 100% !important; 
-        height: 350px !important; 
-        margin-bottom: 15px;
-    }
-    
-    .psi-right { 
-        width: 100% !important; 
-        padding: 0 !important;
+    /* Los botones de Editar y Borrar ahora tendrán espacio de sobra */
+    .detail-right div[style*="margin-top:auto"] {
+        margin-top: 20px !important;
+        padding-bottom: 20px;
     }
 }
-
         .nav-btn { background: transparent; border: none; color: var(--gray); text-align: left; padding: 15px 12px; font-size: 1.1rem; cursor: pointer; width: 100%; display: flex; align-items: center; gap: 15px; transition: 0.2s; border-radius: 8px; }
         .nav-btn.active { color: white; background: #222; }
 
@@ -366,7 +359,16 @@ function openBookDetail(id) {
         function showModal(c) { document.getElementById('modal-dynamic-content').innerHTML = c; document.getElementById('modal-overlay').style.display = 'flex'; }
         function closeModal() { document.getElementById('modal-overlay').style.display = 'none'; }
 
-        function openBookModal() { showModal(`<div class="modal-content"><h2>Nuevo Libro</h2><input type="text" id="bt" placeholder="Título"><input type="text" id="ba" placeholder="Autor"><input type="text" id="by" placeholder="Año publicación"><input type="text" id="br" placeholder="Fecha lectura (ej: 20/01/26)"><input type="file" id="bf" accept="image/*"><div style="display:flex;gap:10px;margin-top:10px;"><button onclick="closeModal()" class="btn-action" style="background:#444;flex:1">Cancelar</button><button onclick="saveBook()" class="btn-action" style="background:white;color:black;flex:2">Guardar</button></div></div>`); }
+       function openSortModal() { 
+    showModal(`<div class="modal-content">
+        <h2>Ordenar biblioteca</h2>
+        <button onclick="sortB('title')" class="nav-btn">🔤 Título</button>
+        <button onclick="sortB('author')" class="nav-btn">👤 Autor</button>
+        <button onclick="sortB('year')" class="nav-btn">📅 Año publicación</button>
+        <button onclick="sortB('readDate')" class="nav-btn">📖 Fecha de lectura</button>
+        <button onclick="closeModal()" class="btn-action" style="width:100%; margin-top:10px; background:#444;">Cerrar</button>
+    </div>`); 
+}
 async function saveBook() {
     const t = document.getElementById('bt').value;
     const a = document.getElementById('ba').value.toUpperCase();
@@ -484,7 +486,23 @@ async function delP(id) {
         function closeBookDetail() { document.getElementById('book-detail-view').style.display = 'none'; document.getElementById('books-grid-container').style.display = 'block'; renderBooks(); }
         function exportData() { const data = allBooks.filter(b => b.userId === currentUser); const a = document.createElement('a'); a.href = URL.createObjectURL(new Blob([JSON.stringify(data)], {type:"application/json"})); a.download = `BIBLIOTECA_${currentUser}.json`; a.click(); }
         function openSortModal() { showModal(`<div class="modal-content"><h2>Ordenar</h2><button onclick="sortB('title')" class="nav-btn">Título</button><button onclick="sortB('author')" class="nav-btn">Autor</button><button onclick="closeModal()" class="btn-action" style="width:100%;margin-top:10px">Cerrar</button></div>`); }
-        function sortB(k) { allBooks.sort((a,b) => a[k].localeCompare(b[k])); renderBooks(); closeModal(); }
+        function sortB(k) { 
+            allBooks.sort((a, b) => {
+                const valA = (a[k] || "").toString().toLowerCase();
+                const valB = (b[k] || "").toString().toLowerCase();
+        
+                // Si es año, ordenamos de mayor a menor (más nuevos arriba)
+                if (k === 'year') {
+                    return parseInt(valB || 0) - parseInt(valA || 0);
+                }
+                
+                // Para títulos, autores y fechas de lectura (texto)
+                return valA.localeCompare(valB);
+            }); 
+            
+            renderBooks(); 
+            closeModal(); 
+        }
         function openEditBookModal() { 
                 const b = allBooks.find(x => x.id === currentBookId); 
                 showModal(`<div class="modal-content">
