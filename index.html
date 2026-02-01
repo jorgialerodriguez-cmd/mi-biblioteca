@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BookFlix Premium</title>
+    <title>BookFlix v3</title>
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore-compat.js"></script>
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
@@ -12,655 +12,451 @@
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
 
         :root {
-            --bg-deep: #0a0a0a;
-            --bg-surface: #161616;
-            --primary: #E50914; /* Rojo Netflix */
-            --accent-gradient: linear-gradient(45deg, #E50914, #ff4654);
+            --bg-deep: #000000;
+            --bg-panel: #141414;
+            --primary: #E50914; 
             --text-main: #ffffff;
-            --text-sec: #a3a3a3;
-            --glass: rgba(30, 30, 30, 0.6);
-            --glass-border: rgba(255, 255, 255, 0.1);
-            --radius: 12px;
-            --sidebar-width: 260px;
+            --text-sec: #b3b3b3;
+            --border: #333;
+            --sidebar-width: 250px;
         }
 
-        /* --- GLOBAL --- */
-        body {
-            background-color: var(--bg-deep);
-            color: var(--text-main);
-            font-family: 'Inter', sans-serif;
-            margin: 0; padding: 0;
-            overflow-x: hidden;
-            -webkit-font-smoothing: antialiased;
-        }
-
-        /* Scrollbar personalizada */
+        body { background: var(--bg-deep); color: var(--text-main); font-family: 'Inter', sans-serif; margin: 0; overflow-x: hidden; }
         ::-webkit-scrollbar { width: 8px; }
-        ::-webkit-scrollbar-track { background: var(--bg-deep); }
         ::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
-        ::-webkit-scrollbar-thumb:hover { background: #555; }
-
-        /* Animaciones */
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
-        .animate-enter { animation: fadeIn 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards; }
 
         /* --- PANTALLA PERFILES --- */
         #profile-screen {
-            position: fixed; inset: 0;
-            background: radial-gradient(circle at center, #1a1a1a 0%, #000 100%);
+            position: fixed; inset: 0; background: var(--bg-panel); z-index: 9999;
             display: flex; flex-direction: column; justify-content: center; align-items: center;
-            z-index: 9999; transition: opacity 0.5s ease;
-        }
-        .brand-logo {
-            font-size: 4rem; font-weight: 900; letter-spacing: -2px;
-            background: var(--accent-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-            margin-bottom: 10px; text-shadow: 0 10px 30px rgba(229, 9, 20, 0.3);
-        }
-        .profiles-grid {
-            display: flex; gap: 30px; flex-wrap: wrap; justify-content: center; max-width: 1000px; padding: 20px;
         }
         .profile-card {
-            display: flex; flex-direction: column; align-items: center; cursor: pointer;
-            transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-            width: 110px;
+            text-align: center; cursor: pointer; transition: transform 0.2s; margin: 20px;
         }
         .profile-card:hover { transform: scale(1.1); }
-        .profile-avatar {
-            width: 110px; height: 110px; border-radius: 18px;
-            background: #222; overflow: hidden;
-            border: 3px solid transparent; transition: 0.3s;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.5);
-            display: flex; justify-content: center; align-items: center; font-size: 2rem; color: #555;
+        .p-avatar {
+            width: 120px; height: 120px; border-radius: 8px; background: #333;
+            overflow: hidden; border: 3px solid transparent; margin-bottom: 15px;
         }
-        .profile-avatar img { width: 100%; height: 100%; object-fit: cover; }
-        .profile-card:hover .profile-avatar { border-color: white; box-shadow: 0 0 25px rgba(255,255,255,0.2); }
-        .profile-name { margin-top: 15px; color: var(--text-sec); font-weight: 500; font-size: 1rem; transition: color 0.3s; }
-        .profile-card:hover .profile-name { color: white; }
+        .profile-card:hover .p-avatar { border-color: white; }
+        .p-avatar img { width: 100%; height: 100%; object-fit: cover; }
 
-        /* --- INTERFAZ PRINCIPAL --- */
-        #app-interface { display: none; height: 100vh; grid-template-columns: var(--sidebar-width) 1fr; }
-
-        /* Sidebar Glassmorphism */
+        /* --- LAYOUT PRINCIPAL --- */
+        #app-ui { display: none; height: 100vh; grid-template-columns: var(--sidebar-width) 1fr; }
+        
         .sidebar {
-            background: rgba(10, 10, 10, 0.85);
-            backdrop-filter: blur(12px);
-            border-right: 1px solid var(--glass-border);
-            padding: 40px 20px;
-            display: flex; flex-direction: column;
-            height: 100vh; position: sticky; top: 0; box-sizing: border-box;
+            background: black; border-right: 1px solid var(--border);
+            padding: 30px 20px; display: flex; flex-direction: column;
         }
-        .user-pill {
-            display: flex; align-items: center; gap: 12px; padding: 12px;
-            background: rgba(255,255,255,0.05); border-radius: 12px; margin-bottom: 40px;
-            border: 1px solid rgba(255,255,255,0.05);
-        }
-        .user-pill img { width: 40px; height: 40px; border-radius: 8px; object-fit: cover; }
+        .user-info { display: flex; align-items: center; gap: 10px; margin-bottom: 40px; padding-bottom: 20px; border-bottom: 1px solid var(--border); }
+        .user-info img { width: 40px; height: 40px; border-radius: 4px; object-fit: cover; }
         
-        .nav-btn {
-            background: transparent; border: none; width: 100%; text-align: left;
-            padding: 14px 18px; color: var(--text-sec); font-size: 0.95rem; font-weight: 500;
-            cursor: pointer; border-radius: 10px; margin-bottom: 6px;
-            display: flex; align-items: center; gap: 15px; transition: 0.2s;
+        .menu-btn {
+            background: transparent; border: none; color: var(--text-sec);
+            width: 100%; text-align: left; padding: 12px; cursor: pointer;
+            display: flex; align-items: center; gap: 15px; font-size: 1rem; border-radius: 6px;
         }
-        .nav-btn:hover { background: rgba(255,255,255,0.05); color: white; }
-        .nav-btn.active { background: var(--primary); color: white; box-shadow: 0 4px 15px rgba(229, 9, 20, 0.4); }
-        .material-icons-round { font-size: 20px; }
+        .menu-btn:hover { color: white; background: #222; }
+        .menu-btn.active { color: white; background: #222; font-weight: bold; border-left: 3px solid var(--primary); }
 
-        /* Main Content */
-        .main-content { overflow-y: auto; position: relative; }
+        .main-area { padding: 30px 50px; overflow-y: auto; }
         
-        /* Hero Section (Libro destacado) */
-        .hero-section {
-            height: 350px; width: 100%;
-            position: relative; display: flex; align-items: flex-end;
-            background: linear-gradient(to top, var(--bg-deep) 10%, transparent), url('https://images.unsplash.com/photo-1481627834876-b7833e8f5570?ixlib=rb-1.2.1&auto=format&fit=crop&w=1600&q=80');
-            background-size: cover; background-position: center;
+        /* HEADER (Top Bar) */
+        .top-header {
+            display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;
+            position: sticky; top: 0; z-index: 100; background: var(--bg-deep); padding-bottom: 10px;
         }
-        .hero-overlay {
-            width: 100%; padding: 40px 60px;
-            background: linear-gradient(90deg, #000 0%, transparent 80%);
-        }
-        .hero-badge {
-            background: var(--primary); color: white; padding: 5px 10px; 
-            font-size: 0.7rem; font-weight: 800; letter-spacing: 1px; text-transform: uppercase;
-            border-radius: 4px; margin-bottom: 10px; display: inline-block;
-        }
-        
-        /* Barra búsqueda */
-        .top-bar { padding: 30px 60px 10px 60px; display: flex; justify-content: space-between; align-items: center; }
-        .section-title { font-size: 1.5rem; font-weight: 700; margin: 0; }
-        .search-container { position: relative; }
+        .search-wrap { display: flex; align-items: center; gap: 15px; flex: 1; margin-right: 20px; }
         .search-input {
-            background: #222; border: 1px solid #333; color: white;
-            padding: 12px 20px 12px 45px; border-radius: 50px; width: 250px;
-            font-family: inherit; transition: 0.3s; outline: none;
+            background: #1a1a1a; border: 1px solid var(--border); color: white;
+            padding: 10px 15px; border-radius: 4px; width: 300px;
         }
-        .search-input:focus { width: 320px; border-color: #555; background: #2a2a2a; }
-        .search-icon { position: absolute; left: 15px; top: 10px; color: #666; }
-
-        /* Grid */
-        .books-grid {
-            display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 30px;
-            padding: 20px 60px 100px 60px;
-        }
-        .book-card {
-            background: var(--bg-surface); border-radius: 8px;
-            position: relative; transition: all 0.3s ease; cursor: pointer;
-            overflow: hidden; aspect-ratio: 2/3;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-        }
-        .book-card:hover {
-            transform: scale(1.08) translateY(-5px);
-            box-shadow: 0 20px 40px rgba(0,0,0,0.6);
-            z-index: 10;
-            border: 1px solid rgba(255,255,255,0.1);
-        }
-        .book-cover { width: 100%; height: 100%; object-fit: cover; }
-        .book-overlay {
-            position: absolute; bottom: 0; left: 0; width: 100%;
-            padding: 20px 10px 10px 10px;
-            background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
-            opacity: 0; transition: 0.3s;
-        }
-        .book-card:hover .book-overlay { opacity: 1; }
         
-        /* Add Button */
-        .add-card {
-            border: 2px dashed #333; display: flex; flex-direction: column;
-            justify-content: center; align-items: center; color: #555;
-            background: transparent; aspect-ratio: 2/3; border-radius: 8px; transition: 0.3s;
+        /* BOTONES ACCIÓN */
+        .btn-action {
+            padding: 10px 20px; border-radius: 4px; font-weight: bold; cursor: pointer; border: none;
+            display: flex; align-items: center; gap: 8px; font-size: 0.9rem;
         }
-        .add-card:hover { border-color: var(--primary); color: var(--primary); background: rgba(229,9,20,0.05); }
+        .btn-red { background: var(--primary); color: white; }
+        .btn-red:hover { background: #b20710; }
+        .btn-dark { background: #333; color: white; border: 1px solid #444; }
+        .btn-dark:hover { background: #444; }
 
-        /* --- DETALLE MODAL (Glass) --- */
+        /* GRID LIBROS */
+        .grid {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 25px; padding-bottom: 50px;
+        }
+        .book-item {
+            cursor: pointer; transition: 0.3s; position: relative;
+        }
+        .book-item:hover { transform: scale(1.05); z-index: 10; }
+        .cover-wrap {
+            aspect-ratio: 2/3; background: #222; border-radius: 4px; overflow: hidden; margin-bottom: 10px;
+        }
+        .cover-wrap img { width: 100%; height: 100%; object-fit: cover; }
+        
+        /* MODALES */
+        .modal-bg {
+            position: fixed; inset: 0; background: rgba(0,0,0,0.85); z-index: 5000;
+            display: none; justify-content: center; align-items: center;
+        }
+        .modal-box {
+            background: #181818; padding: 30px; border-radius: 8px; width: 90%; max-width: 500px;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5); border: 1px solid #333;
+        }
+        .input-row { margin-bottom: 15px; }
+        .input-row label { display: block; color: #888; margin-bottom: 5px; font-size: 0.8rem; }
+        .full-input { width: 100%; padding: 10px; background: #262626; border: 1px solid #333; color: white; box-sizing: border-box; }
+        
+        /* DETALLE LIBRO (Overlay completo) */
         #detail-view {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.85);
-            backdrop-filter: blur(8px); z-index: 2000;
-            display: none; opacity: 0; transition: opacity 0.3s;
-            overflow-y: auto;
+            position: fixed; inset: 0; background: #141414; z-index: 2000; display: none; overflow-y: auto;
         }
-        .detail-content {
-            max-width: 900px; margin: 40px auto; padding: 40px;
-            background: #141414; border-radius: 20px;
-            border: 1px solid #333; box-shadow: 0 25px 50px rgba(0,0,0,0.5);
-            display: grid; grid-template-columns: 300px 1fr; gap: 40px;
-            animation: slideUp 0.4s ease;
+        .detail-cols {
+            display: grid; grid-template-columns: 300px 1fr; gap: 40px; max-width: 1000px; margin: 40px auto; padding: 20px;
         }
-        @keyframes slideUp { from {transform: translateY(50px); opacity:0;} to {transform: translateY(0); opacity:1;} }
-        
-        .detail-cover-img { 
-            width: 100%; border-radius: 8px; 
-            box-shadow: 0 10px 30px rgba(0,0,0,0.4); 
+        .action-icons { display: flex; gap: 15px; margin: 20px 0; }
+        .icon-btn {
+            width: 40px; height: 40px; border-radius: 50%; border: 2px solid #555;
+            display: flex; align-items: center; justify-content: center; cursor: pointer;
         }
-        .actions-row { display: flex; gap: 15px; margin: 20px 0; }
-        .action-circle {
-            width: 45px; height: 45px; border-radius: 50%;
-            border: 1px solid #444; display: flex; align-items: center; justify-content: center;
-            cursor: pointer; transition: 0.2s; background: #222;
-        }
-        .action-circle:hover { border-color: white; background: #333; }
-        .action-circle.active { border-color: var(--primary); background: var(--primary); color: white; box-shadow: 0 0 15px rgba(229,9,20,0.4); }
-        .action-circle .material-icons-round { font-size: 24px; color: inherit; }
-        
-        /* Comentarios */
-        .comment-box {
-            background: #1f1f1f; padding: 20px; border-radius: 12px; margin-top: 25px;
-            position: relative; border: 1px solid #333;
-        }
-        .comment-text { font-family: 'Georgia', serif; font-style: italic; color: #ddd; line-height: 1.5; }
+        .icon-btn.active { border-color: var(--primary); background: var(--primary); }
 
-        /* Botones Generales */
-        .btn-main {
-            background: white; color: black; border: none; padding: 12px 24px;
-            font-weight: 700; border-radius: 6px; cursor: pointer;
-            display: flex; align-items: center; gap: 8px; transition: 0.2s;
-        }
-        .btn-main:hover { background: #e6e6e6; transform: scale(1.02); }
-        .btn-sec {
-            background: rgba(255,255,255,0.15); color: white; border: none; padding: 12px 24px;
-            font-weight: 600; border-radius: 6px; cursor: pointer; transition: 0.2s;
-        }
-        .btn-sec:hover { background: rgba(255,255,255,0.25); }
-
-        /* --- MODALES FORMULARIOS --- */
-        .modal-overlay {
-            position: fixed; inset: 0; background: rgba(0,0,0,0.8);
-            backdrop-filter: blur(5px); z-index: 5000; display: none;
-            justify-content: center; align-items: center;
-        }
-        .modal-form {
-            background: #181818; padding: 35px; border-radius: 16px;
-            width: 90%; max-width: 480px; border: 1px solid #333;
-            box-shadow: 0 20px 60px rgba(0,0,0,0.6);
-        }
-        .form-group { margin-bottom: 20px; }
-        .form-group label { display: block; color: #888; margin-bottom: 8px; font-size: 0.85rem; font-weight: 600; text-transform: uppercase; }
-        .form-input {
-            width: 100%; background: #262626; border: 1px solid #333; color: white;
-            padding: 12px; border-radius: 8px; box-sizing: border-box; outline: none;
-            transition: 0.2s; font-family: inherit;
-        }
-        .form-input:focus { border-color: var(--primary); background: #2f2f2f; }
-        
-        /* Mobile */
         @media (max-width: 768px) {
-            #app-interface { grid-template-columns: 1fr; }
-            .sidebar {
-                position: fixed; bottom: 0; top: auto; width: 100%; height: 70px;
-                flex-direction: row; padding: 0 10px; border-top: 1px solid #333; border-right: none;
-                z-index: 1000; background: #000; justify-content: space-around; align-items: center;
-            }
-            .user-pill, .nav-btn span { display: none; }
-            .nav-btn { flex-direction: column; padding: 0; justify-content: center; background: none !important; margin: 0; gap: 4px; box-shadow: none !important; color: #666; }
-            .nav-btn.active { color: white; }
-            .nav-btn .material-icons-round { font-size: 28px; }
-            .hero-section { height: 200px; }
-            .hero-overlay { padding: 20px; }
-            .books-grid { padding: 20px; padding-bottom: 90px; grid-template-columns: repeat(2, 1fr); gap: 15px; }
-            .top-bar { padding: 20px; flex-direction: column; align-items: flex-start; gap: 15px; }
-            .search-input:focus { width: 100%; }
-            .detail-content { grid-template-columns: 1fr; margin: 0; height: 100%; border-radius: 0; padding: 20px 20px 100px 20px; }
-            .detail-cover-img { max-width: 200px; margin: 0 auto; display: block; }
+            #app-ui { grid-template-columns: 1fr; }
+            .sidebar { display: none; } /* En móvil simplificado para focus en contenido */
+            .sidebar.mobile-open { display: flex; position: fixed; inset: 0; z-index: 2000; }
+            .top-header { flex-direction: column; align-items: stretch; gap: 10px; position: relative; }
+            .search-input { width: 100%; }
+            .detail-cols { grid-template-columns: 1fr; }
+            .cover-wrap img { object-fit: contain; }
+            /* Botón menu móvil */
+            #mob-menu-btn { display: block !important; }
         }
     </style>
 </head>
 <body onload="initApp()">
 
     <div id="profile-screen">
-        <div class="brand-logo">BOOKFLIX</div>
-        <p style="color:#888; font-size: 1.1rem; margin-bottom: 40px;">¿Quién está leyendo hoy?</p>
-        <div class="profiles-grid" id="profiles-list"></div>
-        <div class="loader" id="profile-loader" style="display:none; color:var(--primary)">Cargando...</div>
+        <h1 style="color:var(--primary); font-size:3rem; margin-bottom:40px;">BOOKFLIX</h1>
+        <div style="display:flex; gap:30px; flex-wrap:wrap; justify-content:center;" id="profiles-container"></div>
     </div>
 
-    <div id="app-interface">
-        <aside class="sidebar">
-            <div class="user-pill">
-                <img id="sb-avatar">
-                <span id="sb-name" style="font-weight:600; font-size:0.95rem;">Usuario</span>
+    <div id="app-ui">
+        <aside class="sidebar" id="sidebar">
+            <div class="user-info">
+                <img id="sb-img">
+                <div>
+                    <div id="sb-name" style="font-weight:bold">Usuario</div>
+                    <small style="color:#666; cursor:pointer" onclick="openSettingsModal()">Editar Perfil</small>
+                </div>
             </div>
             
-            <button class="nav-btn active" onclick="navTo('all')">
-                <span class="material-icons-round">library_books</span> <span>Biblioteca</span>
-            </button>
-            <button class="nav-btn" onclick="navTo('fav')">
-                <span class="material-icons-round">favorite</span> <span>Favoritos</span>
-            </button>
-            <button class="nav-btn" onclick="navTo('marked')">
-                <span class="material-icons-round">bookmark</span> <span>Marcados</span>
-            </button>
-            <button class="nav-btn" onclick="navTo('pend')">
-                <span class="material-icons-round">schedule</span> <span>Pendientes</span>
-            </button>
+            <button class="menu-btn active" onclick="nav('all', this)"><span class="material-icons-round">grid_view</span> Biblioteca</button>
+            <button class="menu-btn" onclick="nav('fav', this)"><span class="material-icons-round">favorite</span> Favoritos</button>
+            <button class="menu-btn" onclick="nav('marked', this)"><span class="material-icons-round">bookmark</span> Marcados</button>
+            <button class="menu-btn" onclick="nav('pend', this)"><span class="material-icons-round">schedule</span> Pendientes</button>
             
-            <div style="flex-grow:1"></div>
-            
-            <button class="nav-btn" onclick="openSettings()">
-                <span class="material-icons-round">settings</span> <span>Ajustes</span>
-            </button>
-            <button class="nav-btn" onclick="logout()" style="color:#ff4654;">
-                <span class="material-icons-round">logout</span> <span>Salir</span>
-            </button>
+            <div style="margin-top:auto">
+                <button class="menu-btn" onclick="openSettingsModal()"><span class="material-icons-round">settings</span> Ajustes</button>
+                <button class="menu-btn" onclick="logout()" style="color:#ff4444"><span class="material-icons-round">logout</span> Salir</button>
+            </div>
         </aside>
 
-        <main class="main-content">
-            <div class="hero-section" id="hero-banner">
-                <div class="hero-overlay">
-                    <div class="hero-badge">RECOMENDADO PARA TI</div>
-                    <h1 id="hero-title" style="font-size: 2.5rem; margin: 0 0 10px 0; max-width: 600px;">Tu próxima aventura</h1>
-                    <p id="hero-desc" style="color:#ccc; margin-bottom: 20px;">Explora la biblioteca y descubre nuevas historias.</p>
+        <main class="main-area">
+            <div class="top-header">
+                <div class="search-wrap">
+                    <button id="mob-menu-btn" style="display:none; background:none; border:none; color:white; font-size:24px;" onclick="document.getElementById('sidebar').classList.toggle('mobile-open')">☰</button>
+                    <h2 id="section-title" style="margin:0; margin-right:20px;">Libros</h2>
+                    <input type="text" class="search-input" placeholder="Buscar..." oninput="renderBooks(this.value)">
+                </div>
+                
+                <div style="display:flex; gap:10px;">
+                    <button onclick="openSortModal()" class="btn-action btn-dark">
+                        <span class="material-icons-round">sort</span> Ordenar
+                    </button>
+                    <button onclick="openAddModal()" class="btn-action btn-red">
+                        <span class="material-icons-round">add</span> Nuevo Libro
+                    </button>
                 </div>
             </div>
 
-            <div class="top-bar">
-                <h2 id="section-title" class="section-title">Todos los libros</h2>
-                <div class="search-container">
-                    <span class="material-icons-round search-icon">search</span>
-                    <input type="text" class="search-input" placeholder="Títulos, autores..." oninput="searchBooks(this.value)">
-                </div>
-            </div>
-            
-            <div id="grid-container" class="books-grid"></div>
+            <div id="grid" class="grid"></div>
         </main>
     </div>
 
     <div id="detail-view">
-        <div class="detail-content">
-            <div class="left-col">
-                <button onclick="closeDetail()" class="btn-sec" style="margin-bottom:20px; padding: 8px 16px;">
-                    <span class="material-icons-round" style="font-size:16px; margin-right:5px;">arrow_back</span> Volver
-                </button>
-                <div id="det-img-wrapper"></div>
+        <button onclick="closeDetail()" style="position:fixed; top:20px; left:20px; background:rgba(0,0,0,0.5); color:white; border:none; padding:10px 20px; border-radius:4px; cursor:pointer; font-size:16px;">← Volver</button>
+        <div class="detail-cols">
+            <div>
+                <img id="det-img" style="width:100%; border-radius:8px; box-shadow:0 10px 30px black;">
             </div>
-            
-            <div class="right-col">
-                <h1 id="det-title" style="font-size: 2.2rem; margin:0; line-height:1.1;">Título</h1>
-                <h3 id="det-author" style="color:var(--primary); margin: 10px 0 0 0; font-weight:500;">Autor</h3>
+            <div>
+                <h1 id="det-title" style="font-size:2.5rem; margin-bottom:5px;">Título</h1>
+                <h3 id="det-author" style="color:#888; margin-top:0;">Autor</h3>
                 
-                <div class="actions-row">
-                    <div class="action-circle" id="btn-fav-icon" onclick="toggleAction('favorite')" title="Favorito">
-                        <span class="material-icons-round">favorite</span>
-                    </div>
-                    <div class="action-circle" id="btn-mark-icon" onclick="toggleAction('marked')" title="Marcar">
-                        <span class="material-icons-round">bookmark</span>
-                    </div>
-                    <div class="action-circle" id="btn-pend-icon" onclick="toggleAction('isPend')" title="Pendiente">
-                        <span class="material-icons-round">schedule</span>
-                    </div>
+                <div class="action-icons">
+                    <div id="icon-fav" class="icon-btn" onclick="toggle('favorite')"><span class="material-icons-round">favorite</span></div>
+                    <div id="icon-mark" class="icon-btn" onclick="toggle('marked')"><span class="material-icons-round">bookmark</span></div>
+                    <div id="icon-pend" class="icon-btn" onclick="toggle('isPend')"><span class="material-icons-round">schedule</span></div>
                 </div>
 
-                <div id="rating-area" style="color:#ffd700; font-size:1.8rem; cursor:pointer; margin-bottom:10px;"></div>
-                <div id="det-meta" style="color:#666; font-size:0.9rem;"></div>
-                
-                <div class="comment-box">
-                    <div style="display:flex; justify-content:space-between; margin-bottom:10px;">
-                        <span style="font-size:0.8rem; font-weight:bold; color:#666;">TU OPINIÓN</span>
-                        <span class="material-icons-round" onclick="editComment()" style="cursor:pointer; font-size:18px; color:#888;">edit</span>
-                    </div>
-                    <p id="det-comment" class="comment-text">...</p>
+                <div id="stars-box" style="font-size:2rem; color:#ffd700; cursor:pointer; margin-bottom:15px;"></div>
+                <div id="det-meta" style="color:#666; margin-bottom:20px;"></div>
+
+                <div style="background:#222; padding:15px; border-radius:6px; position:relative; margin-bottom:20px;">
+                    <button onclick="editComm()" style="position:absolute; top:10px; right:10px; background:none; border:none; color:#888; cursor:pointer;">✎</button>
+                    <p id="det-comment" style="margin:0; color:#ddd; min-height:20px;">...</p>
                 </div>
 
-                <div style="margin-top: 30px; display:flex; flex-direction:column; gap:12px;">
-                    <button onclick="openPagesModal()" class="btn-main">
-                        <span class="material-icons-round">auto_stories</span> Ver páginas destacadas
-                    </button>
-                    <div style="display:flex; gap:10px;">
-                        <button onclick="openEditBook()" class="btn-sec" style="flex:1">Editar</button>
-                        <button onclick="deleteBook()" class="btn-sec" style="color:#ff4654; background:rgba(255, 70, 84, 0.1);">Eliminar</button>
-                    </div>
+                <button class="btn-action btn-dark" style="width:100%; justify-content:center; margin-bottom:10px;" onclick="openPages()">
+                    <span class="material-icons-round">auto_stories</span> Ver páginas destacadas
+                </button>
+                <div style="display:flex; gap:10px;">
+                    <button class="btn-action btn-dark" style="flex:1; justify-content:center;" onclick="openEditBook()">Editar</button>
+                    <button class="btn-action btn-dark" style="flex:1; justify-content:center; border-color:#ff4444; color:#ff4444;" onclick="deleteBook()">Eliminar</button>
                 </div>
             </div>
         </div>
     </div>
 
-    <div id="modal-wrapper" class="modal-overlay">
-        <div id="modal-content" class="modal-form animate-enter"></div>
+    <div id="modal-overlay" class="modal-bg">
+        <div id="modal-box" class="modal-box"></div>
     </div>
-    
-    <div id="zoom-overlay" class="modal-overlay" onclick="this.style.display='none'">
-        <img id="zoom-img-tag" style="max-width:90%; max-height:90%; border-radius:8px; box-shadow:0 20px 50px black;">
+
+    <div id="zoom-overlay" class="modal-bg" onclick="this.style.display='none'">
+        <img id="zoom-img" style="max-height:95vh; max-width:95vw; border-radius:4px;">
     </div>
 
     <script>
-        // --- CONFIG FIREBASE (NO TOCAR) ---
         const firebaseConfig = { apiKey: "AIzaSyAoXp6vTOEhk3UCt-SmjNLmb2SUQaZERXc", authDomain: "bookflix-34356.firebaseapp.com", projectId: "bookflix-34356", storageBucket: "bookflix-34356.firebasestorage.app", messagingSenderId: "567651297193", appId: "1:567651297193:web:48175e8d3697d4d52686b8" };
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
 
-        // --- ESTADO ---
-        let allBooks = [], profiles = [], currentUser = null, currentBookId = null, filterMode = 'all';
-        const CLASS_ROSTER = ["ADRIANA", "ANA", "GUILLERMO", "ERIK", "ALEXANDER", "DARIEL", "ELENA", "VALERIA", "LUNA", "BELA", "LUCAS", "LUCÍA", "HÉCTOR", "MARCO", "HUGO", "AINARI", "VICTORIA", "QUIANYU"];
+        let allBooks = [], profiles = [], currentUser = null, currentBookId = null, filter = 'all';
 
         async function initApp() {
-            document.getElementById('profile-loader').style.display = 'block';
             try {
-                const doc = await db.collection('data').doc('library_v2').get();
+                const doc = await db.collection('data').doc('library_v3').get();
                 if (doc.exists) {
-                    const data = doc.data(); allBooks = data.books || []; profiles = data.profiles || [];
-                } else {
-                    profiles = CLASS_ROSTER.map(name => ({ name: name, avatar: `https://ui-avatars.com/api/?name=${name}&background=random&color=fff&size=200&bold=true` }));
-                    await saveToDB();
+                    const d = doc.data(); allBooks = d.books || []; profiles = d.profiles || [];
+                }
+                // FORZAR SOLO JORGE Y ALEJANDRA SI NO HAY PERFILES
+                if (profiles.length === 0) {
+                    profiles = [
+                        { name: "JORGE", avatar: "https://ui-avatars.com/api/?name=Jorge&background=0D8ABC&color=fff&size=200" },
+                        { name: "ALEJANDRA", avatar: "https://ui-avatars.com/api/?name=Alejandra&background=E50914&color=fff&size=200" }
+                    ];
+                    save();
                 }
                 renderProfiles();
-            } catch (error) { console.error(error); alert("Revisa tu conexión"); }
-            document.getElementById('profile-loader').style.display = 'none';
+            } catch (e) { alert("Error de conexión"); }
         }
 
-        async function saveToDB() { await db.collection('data').doc('library_v2').set({ books: allBooks, profiles: profiles }); }
+        async function save() { await db.collection('data').doc('library_v3').set({ books: allBooks, profiles }); }
 
         function renderProfiles() {
-            const list = document.getElementById('profiles-list'); list.innerHTML = '';
-            profiles.sort((a,b) => a.name.localeCompare(b.name));
+            const c = document.getElementById('profiles-container'); c.innerHTML = '';
             profiles.forEach(p => {
-                const card = document.createElement('div'); card.className = 'profile-card animate-enter';
-                card.onclick = () => login(p);
-                const img = p.avatar.includes('http') || p.avatar.includes('data:image') ? `<img src="${p.avatar}">` : p.avatar;
-                card.innerHTML = `<div class="profile-avatar">${img}</div><div class="profile-name">${p.name}</div>`;
-                list.appendChild(card);
+                const d = document.createElement('div'); d.className = 'profile-card';
+                d.onclick = () => login(p);
+                d.innerHTML = `<div class="p-avatar"><img src="${p.avatar}"></div><h3 style="margin:0">${p.name}</h3>`;
+                c.appendChild(d);
             });
-            // Add Btn
-            const add = document.createElement('div'); add.className = 'profile-card animate-enter'; add.onclick = openAddProfile;
-            add.innerHTML = `<div class="profile-avatar" style="border:2px dashed #444; background:transparent;"><span class="material-icons-round" style="font-size:40px">add</span></div><div class="profile-name">Añadir</div>`;
-            list.appendChild(add);
         }
 
         function login(p) {
             currentUser = p.name;
-            document.getElementById('profile-screen').style.opacity = '0';
-            setTimeout(() => {
-                document.getElementById('profile-screen').style.display = 'none';
-                document.getElementById('app-interface').style.display = 'grid';
-                document.getElementById('sb-name').innerText = p.name;
-                document.getElementById('sb-avatar').src = p.avatar.includes('http') || p.avatar.includes('data') ? p.avatar : `https://ui-avatars.com/api/?name=${p.name}`;
-                updateHeroSection(); // Nuevo: Actualizar Hero Banner
-                navTo('all');
-            }, 500);
+            document.getElementById('profile-screen').style.display = 'none';
+            document.getElementById('app-ui').style.display = 'grid';
+            document.getElementById('sb-name').innerText = p.name;
+            document.getElementById('sb-img').src = p.avatar;
+            nav('all');
         }
 
-        function logout() {
-            currentUser = null;
-            document.getElementById('app-interface').style.display = 'none';
-            document.getElementById('profile-screen').style.display = 'flex';
-            setTimeout(() => document.getElementById('profile-screen').style.opacity = '1', 50);
+        function logout() { location.reload(); }
+
+        function nav(f, btn) {
+            filter = f;
+            if(btn) { document.querySelectorAll('.menu-btn').forEach(b=>b.classList.remove('active')); btn.classList.add('active'); }
+            document.getElementById('section-title').innerText = f==='all'?'Biblioteca':(f==='fav'?'Favoritos':(f==='marked'?'Marcados':'Pendientes'));
+            document.getElementById('detail-view').style.display = 'none';
+            renderBooks();
         }
 
-        // --- CORE UI ---
-        function navTo(mode) {
-            filterMode = mode;
-            document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-            // Lógica simple para activar el botón correcto
-            const icons = {'all':'library_books', 'fav':'favorite', 'marked':'bookmark', 'pend':'schedule'};
-            const btn = Array.from(document.querySelectorAll('.nav-btn')).find(b => b.innerHTML.includes(icons[mode]));
-            if(btn) btn.classList.add('active');
+        function renderBooks(q = "") {
+            const g = document.getElementById('grid'); g.innerHTML = '';
+            let list = allBooks.filter(b => b.userId === currentUser);
+            if(filter!=='all') list = list.filter(b => b[filter==='fav'?'favorite':(filter==='marked'?'marked':'isPend')]);
+            if(q) list = list.filter(b => b.title.toLowerCase().includes(q.toLowerCase()));
 
-            const titles = { 'all': 'Biblioteca', 'fav': 'Favoritos', 'marked': 'Marcados', 'pend': 'Pendientes' };
-            document.getElementById('section-title').innerText = titles[mode];
-            // Mostrar/Ocultar Hero Banner (solo en inicio)
-            document.getElementById('hero-banner').style.display = (mode === 'all') ? 'flex' : 'none';
-            closeDetail(); renderBooks();
-        }
-
-        function updateHeroSection() {
-            // Mostrar un libro aleatorio del usuario en el banner
-            const myBooks = allBooks.filter(b => b.userId === currentUser);
-            if(myBooks.length > 0) {
-                const random = myBooks[Math.floor(Math.random() * myBooks.length)];
-                document.getElementById('hero-title').innerText = random.title;
-                document.getElementById('hero-desc').innerText = "De: " + random.author;
-                document.getElementById('hero-banner').style.backgroundImage = `linear-gradient(to top, var(--bg-deep) 10%, transparent), url('${random.cover}')`;
-            }
-        }
-
-        function renderBooks(term = "") {
-            const grid = document.getElementById('grid-container'); grid.innerHTML = '';
-            let myBooks = allBooks.filter(b => b.userId === currentUser);
-            
-            if (filterMode === 'fav') myBooks = myBooks.filter(b => b.favorite);
-            if (filterMode === 'marked') myBooks = myBooks.filter(b => b.marked);
-            if (filterMode === 'pend') myBooks = myBooks.filter(b => b.isPend);
-            if (term) myBooks = myBooks.filter(b => b.title.toLowerCase().includes(term.toLowerCase()) || b.author.toLowerCase().includes(term.toLowerCase()));
-
-            myBooks.forEach((book, i) => {
-                const el = document.createElement('div'); el.className = 'book-card animate-enter'; el.style.animationDelay = `${i * 0.05}s`;
-                el.onclick = () => openDetail(book.id);
-                el.innerHTML = `
-                    <img src="${book.cover}" class="book-cover" loading="lazy">
-                    <div class="book-overlay">
-                        <div style="font-weight:bold; font-size:0.9rem; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${book.title}</div>
-                        <div style="color:#aaa; font-size:0.8rem;">${'★'.repeat(book.rating)}</div>
-                    </div>
-                `;
-                grid.appendChild(el);
+            list.forEach(b => {
+                const el = document.createElement('div'); el.className = 'book-item'; el.onclick = () => openDetail(b.id);
+                el.innerHTML = `<div class="cover-wrap"><img src="${b.cover}"></div><div style="font-weight:bold">${b.title}</div><div style="color:#888;font-size:0.9rem">${b.author}</div>`;
+                g.appendChild(el);
             });
-
-            if (filterMode === 'all' && !term) {
-                const addDiv = document.createElement('div'); add.className = 'add-card animate-enter';
-                addDiv.onclick = openAddBookModal;
-                addDiv.innerHTML = `<span class="material-icons-round" style="font-size:50px;">add_circle_outline</span><span style="margin-top:10px; font-weight:600;">Añadir Libro</span>`;
-                grid.appendChild(addDiv);
-            }
         }
-        function searchBooks(val) { renderBooks(val); }
 
-        // --- DETAIL LOGIC ---
         function openDetail(id) {
             currentBookId = id; const b = allBooks.find(x => x.id === id);
-            const view = document.getElementById('detail-view');
-            view.style.display = 'block'; setTimeout(() => view.style.opacity = '1', 10);
-            
-            document.getElementById('det-img-wrapper').innerHTML = `<img src="${b.cover}" class="detail-cover-img">`;
+            document.getElementById('detail-view').style.display = 'block';
+            document.getElementById('det-img').src = b.cover;
             document.getElementById('det-title').innerText = b.title;
             document.getElementById('det-author').innerText = b.author;
-            document.getElementById('det-meta').innerText = `${b.year || ''} • Leído: ${b.readDate || 'N/D'}`;
-            document.getElementById('det-comment').innerText = b.comment || "Sin reseña escrita.";
-
-            // Botones estado
-            const toggleClass = (eid, cond) => document.getElementById(eid).classList.toggle('active', cond);
-            toggleClass('btn-fav-icon', b.favorite);
-            toggleClass('btn-mark-icon', b.marked);
-            toggleClass('btn-pend-icon', b.isPend);
+            document.getElementById('det-meta').innerText = `Año: ${b.year||'-'} | Leído: ${b.readDate||'-'}`;
+            document.getElementById('det-comment').innerText = b.comment || "Sin comentarios";
+            
+            document.getElementById('icon-fav').classList.toggle('active', b.favorite);
+            document.getElementById('icon-mark').classList.toggle('active', b.marked);
+            document.getElementById('icon-pend').classList.toggle('active', b.isPend);
             renderStars(b.rating);
         }
+        function closeDetail() { document.getElementById('detail-view').style.display = 'none'; currentBookId = null; }
 
-        function closeDetail() {
-            const view = document.getElementById('detail-view');
-            view.style.opacity = '0'; setTimeout(() => view.style.display = 'none', 300);
-            currentBookId = null;
-        }
-
-        async function toggleAction(f) {
-            if(!currentBookId) return;
-            const b = allBooks.find(x => x.id === currentBookId); b[f] = !b[f];
-            document.getElementById(f === 'favorite' ? 'btn-fav-icon' : f === 'marked' ? 'btn-mark-icon' : 'btn-pend-icon').classList.toggle('active', b[f]);
-            await saveToDB(); renderBooks(document.querySelector('.search-input').value);
+        async function toggle(k) { 
+            const b = allBooks.find(x => x.id === currentBookId); b[k] = !b[k]; 
+            document.getElementById(k==='favorite'?'icon-fav':(k==='marked'?'icon-mark':'icon-pend')).classList.toggle('active', b[k]);
+            await save(); renderBooks();
         }
 
         function renderStars(r) {
-            const c = document.getElementById('rating-area'); c.innerHTML = '';
+            const c = document.getElementById('stars-box'); c.innerHTML = '';
             for(let i=1; i<=5; i++) {
-                const s = document.createElement('span'); s.innerText = i <= r ? '★' : '☆';
-                s.onclick = async () => { allBooks.find(x => x.id === currentBookId).rating = i; renderStars(i); await saveToDB(); renderBooks(); };
+                const s = document.createElement('span'); s.innerText = i<=r ? '★':'☆';
+                s.onclick = async ()=>{ allBooks.find(x=>x.id===currentBookId).rating=i; renderStars(i); await save(); renderBooks(); };
                 c.appendChild(s);
             }
         }
 
-        // --- CRUD MODALS ---
-        function openModal(html) { document.getElementById('modal-content').innerHTML = html; document.getElementById('modal-wrapper').style.display = 'flex'; }
-        function closeModal() { document.getElementById('modal-wrapper').style.display = 'none'; }
+        // --- MODALES Y ACCIONES ---
+        function modal(html) { document.getElementById('modal-box').innerHTML = html; document.getElementById('modal-overlay').style.display = 'flex'; }
+        function closeModal() { document.getElementById('modal-overlay').style.display = 'none'; }
 
-        // 1. ADD BOOK
-        function openAddBookModal() {
-            openModal(`
-                <h2 style="margin-top:0">Nuevo Libro</h2>
-                <div class="form-group"><label>Título</label><input id="new-t" class="form-input" placeholder="Ej. Harry Potter"></div>
-                <div class="form-group"><label>Autor</label><input id="new-a" class="form-input" placeholder="Ej. J.K. Rowling"></div>
-                <div class="form-group"><label>Portada</label><input id="new-f" type="file" accept="image/*" class="form-input"></div>
-                <div style="display:flex; gap:10px;">
-                    <div class="form-group" style="flex:1"><label>Año</label><input id="new-y" class="form-input" type="number"></div>
-                    <div class="form-group" style="flex:1"><label>Leído el</label><input id="new-d" class="form-input" type="date"></div>
-                </div>
-                <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
-                    <button class="btn-sec" onclick="closeModal()">Cancelar</button>
-                    <button class="btn-main" onclick="saveNewBook()">Guardar</button>
-                </div>
-            `);
+        // AÑADIR
+        function openAddModal() {
+            modal(`<h2>Nuevo Libro</h2>
+            <input id="nt" class="full-input" placeholder="Título" style="margin-bottom:10px">
+            <input id="na" class="full-input" placeholder="Autor" style="margin-bottom:10px">
+            <input id="ny" class="full-input" type="number" placeholder="Año" style="margin-bottom:10px">
+            <label>Portada:</label><input id="nf" type="file" class="full-input" style="margin-bottom:20px">
+            <button class="btn-action btn-red" style="width:100%; justify-content:center" onclick="addBook()">Guardar</button>
+            <button class="btn-action btn-dark" style="width:100%; justify-content:center; margin-top:10px" onclick="closeModal()">Cancelar</button>`);
         }
-        async function saveNewBook() {
-            const t = document.getElementById('new-t').value;
-            const a = document.getElementById('new-a').value;
-            if(!t || !a) return alert("Faltan datos");
-            const f = document.getElementById('new-f').files[0];
-            const cov = f ? await processImage(f) : "https://via.placeholder.com/300x450/222/fff?text=Sin+Portada";
-            
-            allBooks.push({
-                id: Date.now().toString(), userId: currentUser, title: t, author: a.toUpperCase(),
-                year: document.getElementById('new-y').value, readDate: document.getElementById('new-d').value,
-                cover: cov, favorite: false, marked: false, isPend: false, rating: 0, comment: "", pages: []
-            });
-            await saveToDB(); closeModal(); updateHeroSection(); renderBooks();
+        async function addBook() {
+            const t = document.getElementById('nt').value; if(!t) return;
+            const f = document.getElementById('nf').files[0];
+            const cov = f ? await processImg(f) : "https://via.placeholder.com/300x450?text=Sin+Portada";
+            allBooks.push({ id:Date.now().toString(), userId:currentUser, title:t, author:document.getElementById('na').value.toUpperCase(), year:document.getElementById('ny').value, cover:cov, favorite:false, marked:false, isPend:false, rating:0, comment:"", pages:[] });
+            await save(); closeModal(); renderBooks();
         }
 
-        // 2. EDIT BOOK
+        // EDITAR LIBRO
         function openEditBook() {
-            const b = allBooks.find(x => x.id === currentBookId);
-            openModal(`
-                <h2 style="margin-top:0">Editar Libro</h2>
-                <div class="form-group"><label>Título</label><input id="ed-t" class="form-input" value="${b.title}"></div>
-                <div class="form-group"><label>Autor</label><input id="ed-a" class="form-input" value="${b.author}"></div>
-                <div class="form-group"><label>Cambiar Portada</label><input id="ed-f" type="file" class="form-input"></div>
-                <div style="display:flex; gap:10px;">
-                    <div class="form-group" style="flex:1"><label>Año</label><input id="ed-y" class="form-input" value="${b.year}"></div>
-                    <div class="form-group" style="flex:1"><label>Fecha</label><input id="ed-d" class="form-input" type="date" value="${b.readDate}"></div>
-                </div>
-                <div style="display:flex; justify-content:flex-end; gap:10px; margin-top:20px;">
-                    <button class="btn-sec" onclick="closeModal()">Cancelar</button>
-                    <button class="btn-main" onclick="saveEditBook()">Actualizar</button>
-                </div>
-            `);
+            const b = allBooks.find(x=>x.id===currentBookId);
+            modal(`<h2>Editar</h2><input id="et" class="full-input" value="${b.title}" style="margin-bottom:10px"><input id="ea" class="full-input" value="${b.author}" style="margin-bottom:10px"><input id="ey" type="number" class="full-input" value="${b.year}" style="margin-bottom:10px"><input id="er" type="date" class="full-input" value="${b.readDate}" style="margin-bottom:10px"><label>Cambiar Portada:</label><input id="ef" type="file" class="full-input" style="margin-bottom:20px"><button class="btn-action btn-red" style="width:100%;justify-content:center" onclick="saveEdBook()">Guardar</button>`);
         }
-        async function saveEditBook() {
-            const b = allBooks.find(x => x.id === currentBookId);
-            b.title = document.getElementById('ed-t').value; b.author = document.getElementById('ed-a').value.toUpperCase();
-            b.year = document.getElementById('ed-y').value; b.readDate = document.getElementById('ed-d').value;
-            const f = document.getElementById('ed-f').files[0]; if(f) b.cover = await processImage(f);
-            await saveToDB(); closeModal(); openDetail(currentBookId); renderBooks(document.querySelector('.search-input').value);
+        async function saveEdBook() {
+            const b = allBooks.find(x=>x.id===currentBookId);
+            b.title = document.getElementById('et').value; b.author = document.getElementById('ea').value; b.year = document.getElementById('ey').value; b.readDate = document.getElementById('er').value;
+            const f = document.getElementById('ef').files[0]; if(f) b.cover = await processImg(f);
+            await save(); closeModal(); openDetail(currentBookId); renderBooks();
+        }
+        async function deleteBook() { if(confirm("¿Borrar?")) { allBooks=allBooks.filter(x=>x.id!==currentBookId); await save(); closeDetail(); renderBooks(); } }
+
+        // AJUSTES COMPLETOS
+        function openSettingsModal() {
+            const p = profiles.find(x => x.name === currentUser);
+            modal(`<h2>Ajustes de Perfil</h2>
+            <label>Nombre:</label><input id="sn" class="full-input" value="${p.name}" style="margin-bottom:15px">
+            <label>Cambiar Foto:</label><input id="sf" type="file" class="full-input" style="margin-bottom:20px">
+            <hr style="border-color:#333; margin-bottom:20px">
+            <button onclick="exportJSON()" class="btn-action btn-dark" style="width:100%; margin-bottom:10px">💾 Descargar Backup (JSON)</button>
+            <button onclick="document.getElementById('imp-f').click()" class="btn-action btn-dark" style="width:100%">📂 Importar Backup</button>
+            <input type="file" id="imp-f" style="display:none" onchange="importJSON(this)">
+            <div style="margin-top:20px; display:flex; gap:10px">
+                <button onclick="saveSettings()" class="btn-action btn-red" style="flex:1; justify-content:center">Guardar Cambios</button>
+                <button onclick="closeModal()" class="btn-action btn-dark" style="flex:1; justify-content:center">Cerrar</button>
+            </div>`);
+        }
+        async function saveSettings() {
+            const p = profiles.find(x => x.name === currentUser);
+            const oldName = p.name;
+            const newName = document.getElementById('sn').value.toUpperCase();
+            
+            // Actualizar nombre en perfil y en TODOS los libros
+            p.name = newName;
+            allBooks.forEach(b => { if(b.userId === oldName) b.userId = newName; });
+            currentUser = newName;
+
+            const f = document.getElementById('sf').files[0];
+            if(f) p.avatar = await processImg(f);
+            
+            await save();
+            location.reload(); // Recargar para aplicar todo limpio
         }
 
-        // 3. COMMENT & DELETE
-        function editComment() {
-            const b = allBooks.find(x => x.id === currentBookId);
-            openModal(`<h2>Tu Opinión</h2><textarea id="nc" rows="6" class="form-input">${b.comment || ''}</textarea><div style="text-align:right; margin-top:15px;"><button class="btn-main" onclick="saveComm()">Guardar</button></div>`);
+        // IMPORTAR / EXPORTAR LOGICA
+        function exportJSON() {
+            // Solo exportar los libros del usuario actual
+            const myData = allBooks.filter(b => b.userId === currentUser);
+            const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(myData));
+            const dlAnchorElem = document.createElement('a');
+            dlAnchorElem.setAttribute("href", dataStr);
+            dlAnchorElem.setAttribute("download", `backup_${currentUser}_bookflix.json`);
+            dlAnchorElem.click();
         }
-        async function saveComm() { allBooks.find(x => x.id === currentBookId).comment = document.getElementById('nc').value; await saveToDB(); closeModal(); openDetail(currentBookId); }
-        async function deleteBook() { if(confirm("¿Eliminar libro?")) { allBooks = allBooks.filter(b => b.id !== currentBookId); await saveToDB(); closeDetail(); renderBooks(); } }
 
-        // 4. PAGES
-        function openPagesModal() {
-            const b = allBooks.find(x => x.id === currentBookId);
-            const html = (b.pages || []).map((p,i) => `
-                <div style="display:flex; gap:15px; margin-bottom:15px; background:#222; padding:10px; border-radius:8px;">
-                    <img src="${p.img}" style="width:50px; height:50px; object-fit:cover; border-radius:4px; cursor:zoom-in" onclick="document.getElementById('zoom-img-tag').src='${p.img}'; document.getElementById('zoom-overlay').style.display='flex'">
-                    <div style="flex:1"><strong style="color:var(--primary)">Pág ${p.num}</strong><div style="font-size:0.9rem; color:#ccc">${p.note}</div></div>
-                    <button onclick="delPage(${i})" style="background:none; border:none; color:#ff4654; cursor:pointer"><span class="material-icons-round">delete</span></button>
-                </div>`).join('');
-            openModal(`
-                <h2>Páginas Destacadas</h2>
-                <div style="max-height:250px; overflow-y:auto; margin-bottom:20px">${html || '<div style="text-align:center; color:#555">No hay páginas aún</div>'}</div>
-                <div style="border-top:1px solid #333; padding-top:15px">
-                    <div style="display:flex; gap:10px; margin-bottom:10px"><input id="pn" placeholder="Pág #" type="number" class="form-input" style="width:80px"><input id="pt" placeholder="Nota..." class="form-input"></div>
-                    <input id="pf" type="file" class="form-input" style="margin-bottom:10px">
-                    <button class="btn-main" style="width:100%; justify-content:center" onclick="addPage()">Añadir Página</button>
-                </div>
-            `);
+        function importJSON(input) {
+            const file = input.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const importedBooks = JSON.parse(e.target.result);
+                    // Asignar los libros importados al usuario actual para evitar conflictos
+                    importedBooks.forEach(b => b.userId = currentUser);
+                    // Mezclar
+                    allBooks = [...allBooks, ...importedBooks];
+                    await save();
+                    alert("¡Biblioteca importada con éxito!");
+                    closeModal();
+                    renderBooks();
+                } catch (err) { alert("Error al leer el archivo JSON"); }
+            };
+            reader.readAsText(file);
         }
-        async function addPage() {
-            const f = document.getElementById('pf').files[0]; if(!f) return alert("Foto requerida");
-            const img = await processImage(f);
-            allBooks.find(x => x.id === currentBookId).pages.push({ num: document.getElementById('pn').value, note: document.getElementById('pt').value, img });
-            await saveToDB(); openPagesModal();
-        }
-        async function delPage(i) { if(confirm("¿Borrar?")) { allBooks.find(x => x.id === currentBookId).pages.splice(i,1); await saveToDB(); openPagesModal(); } }
 
-        // EXTRAS
-        function openAddProfile() { openModal(`<h2>Nuevo Alumno</h2><input id="np" class="form-input" placeholder="Nombre"><br><br><button class="btn-main" onclick="addProf()">Crear</button>`); }
-        async function addProf() { const n = document.getElementById('np').value.toUpperCase(); if(n) { profiles.push({name:n, avatar:`https://ui-avatars.com/api/?name=${n}&background=random`}); await saveToDB(); closeModal(); renderProfiles(); } }
-        
-        function processImage(file) {
-            return new Promise(r => {
-                const reader = new FileReader(); reader.readAsDataURL(file);
-                reader.onload = e => {
-                    const img = new Image(); img.src = e.target.result;
-                    img.onload = () => {
-                        const cvs = document.createElement('canvas'); const ctx = cvs.getContext('2d');
-                        const scale = 800/img.width;
-                        cvs.width = (img.width>800)?800:img.width; cvs.height = (img.width>800)?img.height*scale:img.height;
-                        ctx.drawImage(img,0,0,cvs.width,cvs.height); r(cvs.toDataURL('image/jpeg', 0.7));
-                    }
-                }
+        // ORDENAR
+        function openSortModal() {
+            modal(`<h2>Ordenar por</h2>
+            <button class="btn-action btn-dark" style="width:100%; margin-bottom:10px" onclick="sort('title')">Título (A-Z)</button>
+            <button class="btn-action btn-dark" style="width:100%; margin-bottom:10px" onclick="sort('rating')">Mejor Valorados</button>
+            <button class="btn-action btn-dark" style="width:100%; margin-bottom:10px" onclick="sort('year')">Año de publicación</button>
+            <button class="btn-action btn-dark" style="width:100%" onclick="closeModal()">Cancelar</button>`);
+        }
+        function sort(k) {
+            allBooks.sort((a,b) => {
+                if(k==='title') return a.title.localeCompare(b.title);
+                return (b[k]||0) - (a[k]||0);
             });
+            closeModal(); renderBooks();
         }
+
+        // COMENTARIO Y PAGINAS
+        function editComm() { const b=allBooks.find(x=>x.id===currentBookId); modal(`<h2>Opinión</h2><textarea id="nc" style="width:100%;height:100px;background:#333;color:white;border:none;padding:10px">${b.comment||''}</textarea><button class="btn-action btn-red" style="width:100%;margin-top:10px" onclick="saveComm()">Guardar</button>`); }
+        async function saveComm() { allBooks.find(x=>x.id===currentBookId).comment=document.getElementById('nc').value; await save(); closeModal(); openDetail(currentBookId); }
         
-        function openSettings() { alert("Configuración del sistema v2.0\nTodo seguro en Firebase."); }
+        function openPages() {
+            const b = allBooks.find(x=>x.id===currentBookId);
+            const html = (b.pages||[]).map((p,i)=>`<div style="display:flex;gap:10px;margin-bottom:10px;background:#222;padding:5px;"><img src="${p.img}" style="height:50px;cursor:zoom-in" onclick="document.getElementById('zoom-img').src='${p.img}';document.getElementById('zoom-overlay').style.display='flex'"><div style="flex:1">Pág ${p.num}<br><small>${p.note}</small></div><button onclick="delP(${i})" style="color:red;background:none;border:none">X</button></div>`).join('');
+            modal(`<h2>Páginas</h2><div style="max-height:200px;overflow:auto">${html}</div><hr><input id="pn" placeholder="Pag" style="width:50px"><input id="pt" placeholder="Nota"><input type="file" id="pf"><button onclick="addP()">Añadir</button>`);
+        }
+        async function addP(){ const f=document.getElementById('pf').files[0]; if(f){ const img=await processImg(f); allBooks.find(x=>x.id===currentBookId).pages.push({num:document.getElementById('pn').value, note:document.getElementById('pt').value, img}); await save(); openPages(); }}
+        async function delP(i){ allBooks.find(x=>x.id===currentBookId).pages.splice(i,1); await save(); openPages(); }
+
+        function processImg(file) {
+            return new Promise(r => { const rd = new FileReader(); rd.onload=e=>{ const i=new Image(); i.src=e.target.result; i.onload=()=>{ const c=document.createElement('canvas'); const s=800/i.width; c.width=Math.min(i.width,800); c.height=i.height*(c.width/i.width); c.getContext('2d').drawImage(i,0,0,c.width,c.height); r(c.toDataURL('image/jpeg',0.7)); }}; rd.readAsDataURL(file); });
+        }
     </script>
 </body>
 </html>
