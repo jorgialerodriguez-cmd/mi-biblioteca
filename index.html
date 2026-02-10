@@ -3,254 +3,140 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BookFlix Pro 2026</title>
-    
+    <title>BookFlix</title>
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-storage-compat.js"></script>
     
     <style>
-        :root { 
-            --bg-color: #141414; 
-            --sidebar-color: #000; 
-            --accent: #e50914; 
-            --text: white; 
-            --gray: #b3b3b3; 
-            --sidebar-width: 260px; 
-        }
-
-        body { 
-            background: var(--bg-color); 
-            color: var(--text); 
-            font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; 
-            margin: 0; padding: 0; 
-            overflow-x: hidden; 
-            min-height: 100vh; 
-        }
-
-        /* PANTALLA DE PERFILES */
-        #profile-selection { 
-            display: flex !important; flex-direction: column; justify-content: center; align-items: center; 
-            height: 100vh; background: var(--bg-color); position: fixed; width: 100%; top: 0; left: 0; z-index: 10000; 
-        }
-        .profiles-gate { display: flex; gap: 25px; flex-wrap: wrap; justify-content: center; }
-        .profile-card { cursor: pointer; text-align: center; width: 130px; }
-        .avatar { 
-            width: 130px; height: 130px; background: #333; border-radius: 4px; 
-            display: flex; justify-content: center; align-items: center; font-size: 60px; 
-            overflow: hidden; border: 3px solid transparent; transition: 0.3s; 
-        }
-        .profile-card:hover .avatar { border: 3px solid white; transform: scale(1.05); }
-        .avatar img { width: 100%; height: 100%; object-fit: cover; }
-
-        /* INTERFAZ PRINCIPAL */
-        #main-interface { display: none; min-height: 100vh; grid-template-columns: var(--sidebar-width) 1fr; }
+        :root { --bg: #141414; --sb: #000; --acc: #e50914; --txt: #fff; --gry: #b3b3b3; }
+        body { background: var(--bg); color: var(--txt); font-family: sans-serif; margin:0; overflow-x:hidden; }
         
-        .sidebar { 
-            background: var(--sidebar-color); padding: 40px 20px; border-right: 1px solid #222; 
-            display: flex; flex-direction: column; height: 100vh; position: sticky; top: 0; 
-        }
-        .sidebar-user { margin-bottom: 40px; text-align: center; }
-        .sidebar-avatar { 
-            width: 90px; height: 90px; background: #333; border-radius: 4px; 
-            margin: 0 auto 15px; overflow: hidden; display: flex; justify-content: center; align-items: center; font-size: 40px;
-        }
-        .sidebar-avatar img { width: 100%; height: 100%; object-fit: cover; }
+        /* ESTÉTICA ORIGINAL (TU CÓDIGO) */
+        #profile-screen { position:fixed; top:0; left:0; width:100%; height:100vh; background:var(--bg); z-index:999; display:flex; flex-direction:column; align-items:center; justify-content:center; }
+        .p-card { width:120px; text-align:center; cursor:pointer; margin:15px; }
+        .p-avatar { width:120px; height:120px; border-radius:4px; background:#333; margin-bottom:10px; border:3px solid transparent; overflow:hidden; }
+        .p-card:hover .p-avatar { border-color:var(--txt); }
 
-        .nav-btn { 
-            background: transparent; border: none; color: var(--gray); text-align: left; 
-            padding: 12px 15px; font-size: 1rem; cursor: pointer; width: 100%; 
-            display: flex; align-items: center; gap: 15px; transition: 0.2s; border-radius: 4px;
-        }
-        .nav-btn.active { color: white; background: rgba(229, 9, 20, 0.2); border-left: 4px solid var(--accent); }
-
-        #content-area { padding: 40px 60px; min-height: 100vh; }
-        .top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 40px; }
-        .search-box { 
-            background: rgba(0,0,0,0.5); border: 1px solid #444; color: white; 
-            padding: 12px 20px; border-radius: 4px; width: 300px; outline: none; 
-        }
-
-        /* GRID DE LIBROS */
-        .books-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 25px; }
-        .book-card { 
-            background: #1a1a1a; border-radius: 4px; cursor: pointer; border: 1px solid #222; 
-            overflow: hidden; transition: 0.3s; 
-        }
-        .book-card:hover { transform: translateY(-5px); border-color: #555; }
-        .book-cover { height: 260px; background: #000; display: flex; justify-content: center; align-items: center; }
-        .book-cover img { width: 100%; height: 100%; object-fit: contain; }
-
-        /* ESTRELLAS */
-        .star-wrapper { position: relative; display: inline-block; cursor: pointer; font-size: 2.5rem; color: #444; line-height: 1; }
-        .star-full { position: absolute; top: 0; left: 0; overflow: hidden; color: #ffd700; width: 0; pointer-events: none; }
-
-        /* MODALES */
-        .modal-overlay { 
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%; 
-            background: rgba(0,0,0,0.95); display: none; justify-content: center; 
-            align-items: center; z-index: 30000; 
-        }
-        .modal-content { 
-            background: #222; padding: 30px; border-radius: 8px; width: 90%; 
-            max-width: 450px; text-align: center; position: relative; 
-        }
-        .modal-content input, .modal-content textarea { 
-            width: 100%; padding: 12px; margin: 10px 0; background: #333; 
-            border: 1px solid #444; color: white; border-radius: 4px; box-sizing: border-box; 
-        }
-        .modal-footer { display: flex; gap: 10px; margin-top: 20px; }
-        .modal-footer button { flex: 1; padding: 12px; font-weight: bold; cursor: pointer; border-radius: 4px; border: none; }
-        .btn-action { padding: 12px 20px; cursor: pointer; border-radius: 4px; border: none; font-weight: bold; }
-
-        /* MÓVIL */
+        #app-ui { display:none; grid-template-columns: 250px 1fr; min-height:100vh; }
+        
+        .sidebar { background:var(--sb); padding:20px; position:sticky; top:0; height:100vh; display:flex; flex-direction:column; border-right:1px solid #333; }
+        .sb-user { display:flex; align-items:center; gap:10px; margin-bottom:30px; }
+        .nav-btn { background:none; border:none; color:var(--gry); padding:10px; font-size:16px; cursor:pointer; text-align:left; display:flex; align-items:center; gap:10px; border-radius:4px; transition:0.2s; }
+        .nav-btn:hover { color:var(--txt); }
+        .nav-btn.active { color:var(--txt); font-weight:bold; }
+        
+        /* BARRA MÓVIL CORREGIDA (TU ESTÉTICA + FIX ABAJO) */
         @media (max-width: 768px) {
-            #main-interface { grid-template-columns: 1fr; }
-            .sidebar { display: none !important; }
-            
-            /* BARRA MÓVIL CORREGIDA (ABAJO) */
-            .sidebar.mobile-active { 
-                display: flex !important; 
-                position: fixed !important; 
-                bottom: 0 !important; 
-                top: auto !important; 
-                left: 0 !important; 
-                width: 100% !important; 
-                height: 70px !important; 
-                background: #000 !important; 
-                border-top: 1px solid #333 !important; 
-                z-index: 99999 !important; 
-                flex-direction: row !important; 
-                justify-content: space-around !important; 
-                align-items: center !important; 
-                padding: 0 !important; 
+            #app-ui { grid-template-columns: 1fr; padding-bottom: 80px; }
+            .sidebar { 
+                display:flex !important; flex-direction:row !important; justify-content:space-around;
+                position:fixed !important; bottom:0 !important; top:auto !important; left:0; width:100%; height:60px;
+                background:rgba(0,0,0,0.95); border-top:1px solid #333; z-index:1000; padding:0;
             }
-            
-            .sidebar-user, .nav-text { display: none !important; }
-            .nav-btn { flex: 1; justify-content: center; height: 100%; margin: 0; }
-            .nav-btn.active { border-top: 3px solid var(--accent); border-left: none; background: transparent; }
-
-            #content-area { padding: 20px 15px 120px 15px !important; overflow-y: auto !important; height: 100vh !important; }
-            .books-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 12px; }
-
-            /* FICHA DETALLE MÓVIL */
-            #book-detail-view { 
-                position: fixed !important; top: 0; left: 0; width: 100%; height: 100%; 
-                background: #141414; z-index: 15000; overflow-y: auto !important; padding: 0 0 120px 0 !important; 
-            }
-            .detail-layout { display: flex !important; flex-direction: column !important; }
-            .detail-left { width: 100% !important; height: auto !important; min-height: 350px; background: #000; }
-            .detail-left img { width: 100%; max-height: 55vh; object-fit: contain !important; }
-            .detail-right { width: 100% !important; padding: 20px !important; box-sizing: border-box !important; }
-            
-            #det-title { font-size: 2rem !important; margin: 0 0 10px 0; }
-            
-            .comment-section { 
-                background: #222; padding: 15px; border-radius: 8px; margin-top: 15px; 
-                position: relative; min-height: 60px; 
-            }
-            .action-buttons-container { 
-                display: flex !important; flex-direction: column !important; gap: 12px !important; margin-top: 30px; 
-            }
-            .btn-action { width: 100% !important; padding: 16px !important; font-size: 1.1rem; }
+            .sb-user, .nav-txt { display:none; }
+            .nav-btn { flex:1; justify-content:center; font-size:24px; }
         }
 
-        /* ICONOS Y EXTRAS */
-        .action-icon { cursor: pointer; width: 35px; height: 35px; fill: none; stroke: white; stroke-width: 25px; transition: 0.2s; }
-        .active-heart { fill: #e50914 !important; stroke: #e50914 !important; }
-        .active-mark { fill: #f1c40f !important; stroke: #f1c40f !important; }
-        .active-pend { fill: #3498db !important; stroke: #3498db !important; }
+        /* GRID Y TARJETAS ORIGINALES */
+        #main-content { padding:30px; }
+        .toolbar { display:flex; gap:10px; margin-bottom:20px; }
+        #search { flex:1; padding:10px; background:#000; border:1px solid #333; color:white; border-radius:4px; }
         
-        #zoom-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); z-index: 40000; display: none; justify-content: center; align-items: center; }
-        #zoom-img { max-width: 90%; max-height: 90%; object-fit: contain; }
-        .zoom-nav { position: absolute; top: 50%; transform: translateY(-50%); background: rgba(255,255,255,0.1); color: white; border: none; padding: 20px; font-size: 2.5rem; cursor: pointer; border-radius: 50%; }
+        .grid { display:grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap:20px; }
+        .card { background:#181818; border-radius:4px; overflow:hidden; transition:0.3s; cursor:pointer; position:relative; }
+        .card:hover { transform:scale(1.05); z-index:10; }
+        .c-img { height:240px; background:#222; display:flex; align-items:center; justify-content:center; overflow:hidden; }
+        .c-info { padding:10px; }
+        .add-card { border:2px dashed #444; display:flex; align-items:center; justify-content:center; font-size:40px; color:#444; height:300px; }
+
+        /* VISTA DETALLE Y MODALES */
+        .modal-overlay { position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.9); z-index:2000; display:none; justify-content:center; align-items:center; }
+        .modal-box { background:#181818; padding:30px; border-radius:8px; width:90%; max-width:500px; max-height:90vh; overflow-y:auto; }
+        input, textarea, select { width:100%; padding:10px; margin:5px 0 15px; background:#333; border:none; color:white; border-radius:4px; box-sizing:border-box; }
+        .modal-btns { display:flex; gap:10px; margin-top:20px; }
+        .modal-btns button { flex:1; padding:12px; border:none; border-radius:4px; font-weight:bold; cursor:pointer; color:white; }
+
+        /* ESTRELLAS Y EDICIÓN */
+        .star-w { display:inline-block; position:relative; cursor:pointer; font-size:30px; color:#444; }
+        .star-f { position:absolute; top:0; left:0; overflow:hidden; color:#ffd700; width:0%; pointer-events:none; }
+        
+        /* DETALLE ESTILO NETFLIX */
+        #detail-view { position:fixed; top:0; left:0; width:100%; height:100%; background:#141414; z-index:1500; display:none; flex-direction:column; overflow-y:auto; padding:20px; box-sizing:border-box; }
+        .dt-grid { display:grid; grid-template-columns: 300px 1fr; gap:30px; max-width:1000px; margin:0 auto; }
+        @media (max-width: 768px) { .dt-grid { grid-template-columns: 1fr; } }
+        
+        /* LÁPIZ DE EDICIÓN */
+        .comment-box { background:#222; padding:15px; border-radius:8px; position:relative; margin-top:20px; }
+        .edit-pencil { position:absolute; top:10px; right:10px; background:none; border:none; cursor:pointer; font-size:20px; }
     </style>
 </head>
-<body onload="initApp()">
+<body>
 
-    <div id="profile-selection">
-        <h1 style="color: #e50914; font-size: 4rem; font-weight: 900; margin-bottom: 40px;">BOOKFLIX</h1>
-        <div class="profiles-gate" id="profiles-container"></div>
+    <div id="profile-screen">
+        <h1 style="color:var(--acc); font-size:50px; margin-bottom:40px; font-weight:900">BOOKFLIX</h1>
+        <div id="profiles-container" style="display:flex; flex-wrap:wrap; justify-content:center"></div>
+        <button onclick="openModal('newProf')" style="margin-top:30px; background:none; border:1px solid #444; color:#888; padding:10px 20px; cursor:pointer">Administrar Perfiles</button>
     </div>
 
-    <div id="main-interface">
-        <aside class="sidebar">
-            <div class="sidebar-user">
-                <div id="current-avatar" class="sidebar-avatar"></div>
-                <div id="current-username" style="font-weight: bold;"></div>
+    <div id="app-ui">
+        <div class="sidebar">
+            <div class="sb-user">
+                <img id="sb-avatar" style="width:40px; height:40px; border-radius:4px; object-fit:cover">
+                <b id="sb-name">Usuario</b>
             </div>
-            <nav style="display: contents">
-                <button class="nav-btn active" id="btn-all" onclick="showCategory('all')">📚 <span class="nav-text">Biblioteca</span></button>
-                <button class="nav-btn" id="btn-fav" onclick="showCategory('fav')">❤️ <span class="nav-text">Favoritos</span></button>
-                <button class="nav-btn" id="btn-marked" onclick="showCategory('marked')">🔖 <span class="nav-text">Marcados</span></button>
-                <button class="nav-btn" id="btn-pend" onclick="showCategory('pend')">⏳ <span class="nav-text">Pendientes</span></button>
-                <button class="nav-btn" onclick="openSettingsModal()">⚙️ <span class="nav-text">Ajustes</span></button>
-                <button class="nav-btn" onclick="logout()" style="color:#ff4444; margin-top: auto;">🚪 <span class="nav-text">Salir</span></button>
-            </nav>
-        </aside>
+            <button class="nav-btn active" id="btn-all" onclick="setFilter('all')">📚 <span class="nav-txt">Inicio</span></button>
+            <button class="nav-btn" id="btn-fav" onclick="setFilter('fav')">❤️ <span class="nav-txt">Favoritos</span></button>
+            <button class="nav-btn" id="btn-pend" onclick="setFilter('pend')">⏳ <span class="nav-txt">Pendientes</span></button>
+            <button class="nav-btn" id="btn-done" onclick="setFilter('done')">✅ <span class="nav-txt">Leídos</span></button>
+            <div style="flex:1"></div>
+            <button class="nav-btn" onclick="openSort()">🔃 <span class="nav-txt">Ordenar</span></button>
+            <button class="nav-btn" onclick="logout()" style="color:#e50914">🚪 <span class="nav-txt">Salir</span></button>
+        </div>
 
-        <main id="content-area">
-            <div class="top-bar">
-                <input type="text" id="main-search" class="search-box" placeholder="Título, autor o año..." oninput="renderBooks()">
-                <button onclick="openSortModal()" class="btn-action" style="background:#333; color:white;">⇅ Ordenar</button>
+        <div id="main-content">
+            <div class="toolbar">
+                <input id="search" placeholder="Títulos, géneros, gente..." oninput="render()">
             </div>
-            
-            <div id="books-grid-container">
-                <div class="books-grid" id="books-grid"></div>
-            </div>
-            
-            <div id="book-detail-view" style="display:none;">
-                <button onclick="closeBookDetail()" class="btn-action" style="background:#333; color:white; margin: 20px; border-radius:4px;">← Volver</button>
-                <div class="detail-layout">
-                    <div id="det-img-container" class="detail-left"></div>
-                    <div class="detail-right">
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <h1 id="det-title" style="margin:0;"></h1>
-                            <div style="display:flex; gap:15px;">
-                                <svg class="action-icon" id="heart-svg" onclick="toggleFavorite()" viewBox="0 0 512 512"><path d="M462.3 62.6C407.5 15.9 326 24.3 275.7 76.2L256 96.5l-19.7-20.3C186.1 24.3 104.5 15.9 49.7 62.6c-62.8 53.6-66.1 149.8-9.9 207.9l193.5 199.8c12.5 12.9 32.8 12.9 45.3 0l193.5-199.8c56.3-58.1 53-154.3-9.8-207.9z"/></svg>
-                                <svg class="action-icon" id="mark-svg" onclick="toggleMark()" viewBox="0 0 384 512"><path d="M0 48V487.7C0 501.1 10.9 512 24.3 512c5 0 9.9-1.5 14-4.4L192 400L345.7 507.6c4.1 2.9 9 4.4 14 4.4c13.4 0 24.3-10.9 24.3-24.3V48c0-26.5-21.5-48-48-48H48C21.5 0 0 21.5 0 48z"/></svg>
-                                <svg class="action-icon" id="pend-svg" onclick="togglePend()" viewBox="0 0 512 512"><path d="M256 0a256 256 0 1 1 0 512A256 256 0 1 1 256 0zM232 120V256c0 8 4 15.5 10.7 20l96 64c11 7.4 25.9 4.4 33.3-6.7s4.4-25.9-6.7-33.3L280 243.2V120c0-13.3-10.7-24-24-24s-24 10.7-24 24z"/></svg>
-                            </div>
-                        </div>
-                        
-                        <div id="star-container" style="margin: 10px 0;"></div>
-                        
-                        <h2 id="det-author" style="color:var(--gray); margin:0;"></h2>
-                        <p id="det-meta" style="color:#888; font-weight:bold;"></p>
-                        
-                        <div class="comment-section">
-                            <button onclick="openEditCommentModal()" style="position:absolute; right:10px; top:10px; background:none; border:none; cursor:pointer; font-size:1.3rem;">✏️</button>
-                            <p id="comment-text" style="margin:0; min-height:20px; white-space: pre-wrap; padding-right: 30px;"></p>
-                        </div>
+            <div id="grid" class="grid"></div>
+        </div>
+    </div>
 
-                        <div class="action-buttons-container">
-                            <button onclick="openAllPagesView()" class="btn-action" style="background:white; color:black;">Páginas destacadas 📖</button>
-                            <button onclick="openEditBookModal()" class="btn-action" style="background:#444; color:white;">Editar datos</button>
-                            <button onclick="deleteBook()" class="btn-action" style="background:none; border:1px solid #ff4444; color:#ff4444;">Borrar libro</button>
-                        </div>
-                    </div>
+    <div id="detail-view">
+        <button onclick="closeDetail()" style="align-self:flex-start; margin-bottom:20px; background:none; border:none; color:white; font-size:24px; cursor:pointer">← Volver</button>
+        <div class="dt-grid">
+            <div id="dt-img" style="border-radius:8px; overflow:hidden; background:#000;"></div>
+            <div>
+                <h1 id="dt-title" style="margin-top:0; font-size:40px">Título</h1>
+                <div style="display:flex; align-items:center; gap:15px; margin:15px 0">
+                    <div id="dt-stars" style="display:flex"></div>
+                    <span id="dt-meta" style="color:#888; font-weight:bold">2024 | Autor</span>
+                </div>
+                
+                <div class="comment-box">
+                    <button class="edit-pencil" onclick="openComment()">✏️</button>
+                    <p id="dt-comment" style="margin:0; color:#ddd; min-height:40px; white-space:pre-wrap">Sin reseña...</p>
+                </div>
+
+                <div style="display:flex; gap:15px; margin-top:30px">
+                    <button onclick="toggleFav()" id="btn-fav-act" style="background:white; color:black; border:none; padding:10px 20px; font-weight:bold; border-radius:4px; cursor:pointer">Favoritos</button>
+                    <button onclick="togglePend()" id="btn-pend-act" style="background:#444; color:white; border:none; padding:10px 20px; font-weight:bold; border-radius:4px; cursor:pointer">Pendiente</button>
+                    <button onclick="openEdit()" style="background:#444; color:white; border:none; padding:10px 20px; font-weight:bold; border-radius:4px; cursor:pointer">Editar</button>
+                    <button onclick="deleteBook()" style="background:none; border:1px solid #e50914; color:#e50914; padding:10px 20px; font-weight:bold; border-radius:4px; cursor:pointer">Borrar</button>
                 </div>
             </div>
-        </main>
+        </div>
     </div>
 
-    <div id="zoom-overlay" onclick="this.style.display='none'">
-        <button class="zoom-nav" style="left:20px;" onclick="changeZoomIdx(-1, event)">❮</button>
-        <img id="zoom-img">
-        <button class="zoom-nav" style="right:20px;" onclick="changeZoomIdx(1, event)">❯</button>
-    </div>
-
-    <div id="modal-overlay" class="modal-overlay"><div id="modal-dynamic-content"></div></div>
+    <div id="modal-wrapper" class="modal-overlay"><div id="modal-c" class="modal-box"></div></div>
 
     <script>
-        // ============================================
-        // CONFIGURACIÓN DE FIREBASE (PON TUS DATOS)
-        // ============================================
+        // --- PEGA AQUÍ TU CONFIGURACIÓN (OJO AL PROJECT ID) ---
         const firebaseConfig = {
-            apiKey: "TU_API_KEY_AQUI", // <--- PON TU API KEY
+            apiKey: "TU_API_KEY_AQUI", // <--- TU CLAVE
             authDomain: "bookflix-34356.firebaseapp.com",
-            projectId: "bookflix-34356", // SIN .firebasestorage.app
-            storageBucket: "bookflix-34356.firebasestorage.app", // <--- TU BUCKET
+            projectId: "bookflix-34356", // <--- SIN .firebasestorage
+            storageBucket: "bookflix-34356.firebasestorage.app", 
             messagingSenderId: "567651297193",
             appId: "1:567651297193:web:48175e8d3697d4d52686b8"
         };
@@ -258,26 +144,25 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
         const storage = firebase.storage();
+        
+        // ESTADO
+        let books=[], profiles=[], user=null, curId=null, filter='all', sortKey='title', sortOrder=1;
 
-        // ESTADO GLOBAL
-        let allBooks = [], profiles = [], currentUser = "", currentBookId = null, currentZoomIdx = 0, currentCat = 'all';
-
-        // CARGA INICIAL
-        async function initApp() {
+        async function init(){
             try {
-                const doc = await db.collection('data').doc('library').get();
-                if(doc.exists) { 
-                    const d = doc.data(); 
-                    profiles = d.profiles || []; 
-                    allBooks = d.books || []; 
-                }
-                renderProfiles();
-            } catch (e) { console.error("Error cargando:", e); }
+                // Recuperar datos
+                const d = (await db.collection('data').doc('library').get()).data();
+                books = d?.books||[]; profiles = d?.profiles||[];
+                
+                // Login persistente
+                const saved = localStorage.getItem('bf_user');
+                if(saved && profiles.find(p=>p.name===saved)) login(profiles.find(p=>p.name===saved));
+                else renderProfs();
+
+            } catch(e){ console.error(e); }
         }
 
-        async function sync() { 
-            await db.collection('data').doc('library').set({ books: allBooks, profiles }); 
-        }
+        async function save(){ await db.collection('data').doc('library').set({books,profiles}); }
 
         // --- SUBIDA DE IMÁGENES AL BUCKET (SOLUCIÓN SPACE) ---
         async function uploadToBucket(file) {
@@ -288,224 +173,157 @@
                     const img = new Image(); img.src = e.target.result;
                     img.onload = () => {
                         const canvas = document.createElement('canvas');
-                        const MAX = 1200; 
+                        const MAX = 1000;
                         let w = img.width, h = img.height;
                         if(w > MAX) { h *= MAX/w; w = MAX; }
                         canvas.width = w; canvas.height = h;
                         canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-                        
                         canvas.toBlob(async (blob) => {
-                            const ref = storage.ref().child(`portadas/${Date.now()}_${Math.random()}`);
+                            const ref = storage.ref().child(`imgs/${Date.now()}.jpg`);
                             await ref.put(blob);
                             const url = await ref.getDownloadURL();
                             resolve(url);
-                        }, 'image/jpeg', 0.85);
+                        }, 'image/jpeg', 0.8);
                     };
                 };
             });
         }
 
-        // --- GESTIÓN DE PERFILES ---
-        function renderProfiles() {
-            const c = document.getElementById('profiles-container'); c.innerHTML = '';
-            profiles.forEach(p => {
-                const div = document.createElement('div'); div.className = 'profile-card';
-                div.onclick = () => accessProfile(p.name, p.avatar);
-                const imgTag = (p.avatar && (p.avatar.startsWith('http') || p.avatar.startsWith('data'))) ? `<img src="${p.avatar}">` : p.avatar;
-                div.innerHTML = `<div class="avatar">${imgTag}</div><span style="display:block;margin-top:10px;font-weight:bold">${p.name}</span>`;
-                c.appendChild(div);
+        // --- LÓGICA DE USUARIOS ---
+        function renderProfs() {
+            document.getElementById('profile-screen').style.display = 'flex';
+            const c=document.getElementById('profiles-container'); c.innerHTML='';
+            profiles.forEach(p=>{
+                const d=document.createElement('div'); d.className='p-card'; d.onclick=()=>login(p);
+                const img = (p.avatar && p.avatar.length > 5) ? `<img src="${p.avatar}" style="width:100%;height:100%;object-fit:cover">` : `<div style="font-size:50px;line-height:120px">👤</div>`;
+                d.innerHTML=`<div class="p-avatar">${img}</div><b>${p.name}</b>`;
+                c.appendChild(d);
             });
-            const add = document.createElement('div'); add.className = 'profile-card';
-            add.onclick = () => openCreateProfileModal();
-            add.innerHTML = `<div class="avatar" style="font-size:40px">+</div><span style="display:block;margin-top:10px">Añadir</span>`;
-            c.appendChild(add);
+        }
+        function login(p){ 
+            user=p.name; localStorage.setItem('bf_user', user);
+            document.getElementById('profile-screen').style.display='none'; 
+            document.getElementById('app-ui').style.display='grid'; 
+            document.getElementById('sb-name').innerText=p.name; 
+            document.getElementById('sb-avatar').src= p.avatar.length > 5 ? p.avatar : '';
+            render(); 
         }
 
-        function accessProfile(name, avatar) {
-            currentUser = name;
-            document.getElementById('profile-selection').style.setProperty('display', 'none', 'important');
-            document.getElementById('main-interface').style.display = 'grid';
-            document.querySelector('.sidebar').classList.add('mobile-active');
-            document.getElementById('current-username').innerText = name;
-            const imgTag = (avatar && (avatar.startsWith('http') || avatar.startsWith('data'))) ? `<img src="${avatar}">` : avatar;
-            document.getElementById('current-avatar').innerHTML = imgTag;
-            showCategory('all');
-        }
-
-        // --- RENDERIZADO DE LIBROS ---
-        function renderBooks() {
-            const grid = document.getElementById('books-grid'); grid.innerHTML = '';
-            const query = document.getElementById('main-search').value.toLowerCase();
+        // --- RENDERIZADO PRINCIPAL ---
+        function render() {
+            const g = document.getElementById('grid'); g.innerHTML = '';
+            let list = books.filter(b => b.user === user);
             
-            let filtered = allBooks.filter(b => b.userId === currentUser);
+            // Filtros Texto
+            const search = document.getElementById('search').value.toLowerCase();
+            if(search) list = list.filter(b => b.title.toLowerCase().includes(search) || b.author.toLowerCase().includes(search));
             
-            if(query) filtered = filtered.filter(b => b.title.toLowerCase().includes(query) || b.author.toLowerCase().includes(query) || (b.year && b.year.includes(query)));
-            if(currentCat !== 'all') filtered = filtered.filter(b => b[currentCat === 'fav' ? 'favorite' : currentCat === 'marked' ? 'marked' : 'isPend']);
+            // Filtros Categoría
+            if(filter === 'fav') list = list.filter(b => b.fav);
+            if(filter === 'pend') list = list.filter(b => b.pend);
+            if(filter === 'done') list = list.filter(b => !b.pend && b.readDate);
 
-            filtered.forEach(book => {
-                const div = document.createElement('div'); div.className = 'book-card';
-                div.onclick = () => openBookDetail(book.id);
-                const imgTag = (book.cover && (book.cover.startsWith('http') || book.cover.startsWith('data'))) ? `<img src="${book.cover}">` : book.cover;
-                div.innerHTML = `<div class="book-cover">${imgTag}</div><div style="padding:15px"><b>${book.title}</b><br><small style="color:#aaa">${book.author}</small></div>`;
-                grid.appendChild(div);
+            // Ordenación
+            list.sort((a,b) => {
+                let vA = (a[sortKey]||"").toString().toLowerCase();
+                let vB = (b[sortKey]||"").toString().toLowerCase();
+                if(sortKey==='year' || sortKey==='rating' || sortKey==='readDate') return vB.localeCompare(vA, undefined, {numeric:true});
+                return vA.localeCompare(vB);
             });
-            
-            if(currentCat === 'all' && !query) {
-                const add = document.createElement('div'); add.className = 'book-card'; add.style.border="2px dashed #444"; add.style.display="flex"; add.style.justifyContent="center"; add.style.alignItems="center"; add.style.fontSize="40px"; add.innerText = '+'; add.onclick = openBookModal; grid.appendChild(add);
+
+            list.forEach(b => {
+                const d = document.createElement('div'); d.className = 'card';
+                d.onclick = () => showDetail(b.id);
+                const cover = (b.cover && b.cover.length > 5) ? `<img src="${b.cover}" style="width:100%;height:100%;object-fit:cover">` : `<div style="font-size:50px;color:#444">📖</div>`;
+                d.innerHTML = `<div class="c-img">${cover}</div><div class="c-info"><b>${b.title}</b><br><small style="color:#888">${b.author}</small><div style="color:#ffd700;margin-top:5px">${'★'.repeat(Math.floor(b.rating||0))}</div></div>`;
+                g.appendChild(d);
+            });
+
+            if(filter === 'all' && !search) {
+                const add = document.createElement('div'); add.className = 'card add-card';
+                add.onclick = () => openModal('new'); add.innerHTML = '+'; g.appendChild(add);
             }
         }
 
-        // --- SISTEMA DE ESTRELLAS ---
-        function renderStars(rating) {
-            const container = document.getElementById('star-container'); container.innerHTML = '';
-            for(let i = 1; i <= 5; i++) {
-                const wrapper = document.createElement('div'); wrapper.className = 'star-wrapper'; wrapper.innerHTML = '★';
-                const full = document.createElement('div'); full.className = 'star-full'; full.innerHTML = '★';
-                
-                if(rating >= i) full.style.width = '100%';
-                else if(rating > i-1) full.style.width = '50%';
-                else full.style.width = '0%';
-
-                wrapper.appendChild(full);
-                wrapper.onclick = async (e) => {
-                    const rect = wrapper.getBoundingClientRect();
-                    const val = (e.clientX - rect.left < rect.width/2) ? i-0.5 : i;
-                    allBooks.find(b => b.id === currentBookId).rating = val;
-                    await sync(); renderStars(val);
-                };
-                container.appendChild(wrapper);
-            }
-        }
-
-        // --- FICHA DE DETALLE ---
-        function openBookDetail(id) {
-            currentBookId = id; const b = allBooks.find(x => x.id === id);
-            document.getElementById('books-grid-container').style.display = 'none';
-            document.getElementById('book-detail-view').style.display = 'block';
+        // --- GUARDADO CON BUCKET ---
+        async function saveNew() {
+            const btn = document.getElementById('btn-save');
+            const t = document.getElementById('inp-title').value; 
+            if(!t) return alert("Falta el título");
             
-            document.getElementById('det-title').innerText = b.title;
-            document.getElementById('det-author').innerText = b.author;
-            document.getElementById('det-meta').innerText = (b.year ? "Año: "+b.year : "") + (b.readDate ? " | Leído: "+b.readDate : "");
-            
-            const imgTag = (b.cover && (b.cover.startsWith('http') || b.cover.startsWith('data'))) ? `<img src="${b.cover}">` : b.cover;
-            document.getElementById('det-img-container').innerHTML = imgTag;
-            
-            document.getElementById('comment-text').innerText = b.comment || "Haz clic en el lápiz para escribir...";
-            
-            document.getElementById('heart-svg').classList.toggle('active-heart', b.favorite);
-            document.getElementById('mark-svg').classList.toggle('active-mark', b.marked);
-            document.getElementById('pend-svg').classList.toggle('active-pend', b.isPend);
-            
-            renderStars(b.rating || 0);
-        }
-
-        // --- MODALES (CREAR/EDITAR) ---
-        function openBookModal() { 
-            showModal(`<div class="modal-content"><h2>Nuevo Libro</h2><input type="text" id="bt" placeholder="Título"><input type="text" id="ba" placeholder="Autor"><input type="text" id="by" placeholder="Año"><input type="text" id="br" placeholder="Fecha lectura"><input type="file" id="bf"><div class="modal-footer"><button onclick="closeModal()" style="background:#444;color:white">Cancelar</button><button onclick="saveBook()" style="background:var(--accent);color:white">Guardar</button></div></div>`); 
-        }
-
-        async function saveBook() {
-            const btn = event.target; btn.disabled = true; btn.innerText = "Subiendo...";
-            const t = document.getElementById('bt').value; 
-            if(!t) { alert("Falta el título"); btn.disabled = false; btn.innerText = "Guardar"; return; }
-            
-            const f = document.getElementById('bf').files[0]; 
+            btn.disabled = true; btn.innerText = "Subiendo...";
+            const f = document.getElementById('inp-file').files[0];
             let cov = '📖'; 
-            if(f) cov = await uploadToBucket(f); // USANDO BUCKET
-            
-            allBooks.push({ 
-                id: Date.now(), userId: currentUser, title: t, 
-                author: document.getElementById('ba').value.toUpperCase(), 
-                cover: cov, year: document.getElementById('by').value, 
-                readDate: document.getElementById('br').value, 
-                favorite: false, marked: false, isPend: false, rating: 0, comment: "", pages: [] 
+            if(f) cov = await uploadToBucket(f);
+
+            books.push({
+                id: Date.now(), user: user, title: t, 
+                author: document.getElementById('inp-auth').value.toUpperCase(),
+                year: document.getElementById('inp-year').value,
+                readDate: document.getElementById('inp-date').value,
+                cover: cov, fav: false, pend: false, rating: 0, comment: "", pages: []
             });
-            await sync(); closeModal(); renderBooks();
+            await save(); closeModal(); render();
         }
 
-        function openEditBookModal() { 
-            const b = allBooks.find(x => x.id === currentBookId);
-            showModal(`<div class="modal-content"><h2>Editar</h2><input type="text" id="et" value="${b.title}"><input type="text" id="ea" value="${b.author}"><input type="text" id="ey" value="${b.year || ''}"><input type="text" id="er" value="${b.readDate || ''}"><input type="file" id="ef"><div class="modal-footer"><button onclick="closeModal()" style="background:#444;color:white">Cancelar</button><button onclick="upB()" style="background:var(--accent);color:white">Guardar</button></div></div>`); 
+        // --- DETALLE Y ESTRELLAS ---
+        function showDetail(id) {
+            curId = id; const b = books.find(x => x.id === id);
+            document.getElementById('app-ui').style.display = 'none';
+            document.getElementById('detail-view').style.display = 'flex';
+            
+            const img = (b.cover && b.cover.length > 5) ? `<img src="${b.cover}" style="width:100%;height:auto;max-height:50vh;object-fit:contain">` : '<div style="font-size:100px;text-align:center">📖</div>';
+            
+            let starsHTML = '';
+            for(let i=1; i<=5; i++){
+                let fill = b.rating >= i ? '100%' : (b.rating > i-1 ? '50%' : '0%');
+                starsHTML += `<div class="star-w" onclick="rate(${i}, event)"><div class="star-f" style="width:${fill}">★</div>★</div>`;
+            }
+
+            document.getElementById('dt-img').innerHTML = img;
+            document.getElementById('dt-title').innerText = b.title;
+            document.getElementById('dt-stars').innerHTML = starsHTML;
+            document.getElementById('dt-meta').innerText = `${b.year || 'Sin año'} | ${b.author}`;
+            document.getElementById('dt-comment').innerText = b.comment || "Sin reseña...";
+            
+            // Botones estado
+            document.getElementById('btn-fav-act').style.background = b.fav ? '#e50914' : 'white';
+            document.getElementById('btn-fav-act').style.color = b.fav ? 'white' : 'black';
+            document.getElementById('btn-pend-act').style.border = b.pend ? '2px solid #3498db' : 'none';
         }
 
-        async function upB() {
-            const btn = event.target; btn.disabled = true; btn.innerText = "Subiendo...";
-            const b = allBooks.find(x => x.id === currentBookId);
-            const f = document.getElementById('ef').files[0];
-            if(f) b.cover = await uploadToBucket(f);
-            b.title = document.getElementById('et').value;
-            b.author = document.getElementById('ea').value.toUpperCase();
-            b.year = document.getElementById('ey').value;
-            b.readDate = document.getElementById('er').value;
-            await sync(); closeModal(); openBookDetail(currentBookId); renderBooks();
+        async function rate(star, e) {
+            const rect = e.target.parentElement.getBoundingClientRect();
+            const isHalf = (e.clientX - rect.left) < (rect.width / 2);
+            books.find(x => x.id === curId).rating = isHalf ? star - 0.5 : star;
+            await save(); showDetail(curId);
         }
 
-        // --- MODAL COMENTARIO ---
-        function openEditCommentModal() {
-            const b = allBooks.find(x => x.id === currentBookId);
-            showModal(`<div class="modal-content"><h2>Reseña</h2><textarea id="nc" rows="6">${b.comment || ''}</textarea><div class="modal-footer"><button onclick="closeModal()" style="background:#444;color:white">Cancelar</button><button onclick="saveC()" style="background:var(--accent);color:white">Guardar</button></div></div>`);
-        }
-        async function saveC() {
-            const b = allBooks.find(x => x.id === currentBookId);
-            b.comment = document.getElementById('nc').value;
-            document.getElementById('comment-text').innerText = b.comment;
-            await sync(); closeModal();
+        function openModal(type) {
+            const w = document.getElementById('modal-wrapper'); const c = document.getElementById('modal-c'); w.style.display='flex';
+            if(type==='new') c.innerHTML = `<h2>Nuevo</h2><input id="inp-title" placeholder="Título"><input id="inp-auth" placeholder="Autor"><input id="inp-year" type="number" placeholder="Año"><input id="inp-date" type="date"><p>Portada:</p><input id="inp-file" type="file"><div class="modal-btns"><button onclick="closeModal()" style="background:#444">Cancelar</button><button id="btn-save" onclick="saveNew()" style="background:#e50914">Guardar</button></div>`;
+            if(type==='comment') c.innerHTML = `<h2>Reseña</h2><textarea id="edit-comment" rows="5">${books.find(x=>x.id===curId).comment||''}</textarea><div class="modal-btns"><button onclick="closeModal()" style="background:#444">Cancelar</button><button onclick="saveComment()" style="background:#e50914">Guardar</button></div>`;
+            if(type==='sort') c.innerHTML = `<h2>Ordenar por</h2><button class="nav-btn" onclick="doSort('title')">🅰️ Título</button><button class="nav-btn" onclick="doSort('year')">📅 Año</button><button class="nav-btn" onclick="doSort('readDate')">📆 Fecha</button><button class="nav-btn" onclick="doSort('rating')">⭐ Estrellas</button><button onclick="closeModal()" style="margin-top:20px;background:#444;width:100%">Cancelar</button>`;
+            if(type==='newProf') c.innerHTML = `<h2>Nuevo Perfil</h2><input id="np-name" placeholder="Nombre"><input id="np-file" type="file"><div class="modal-btns"><button onclick="closeModal()" style="background:#444">Cancelar</button><button onclick="saveProfile()" style="background:#e50914">Crear</button></div>`;
         }
 
-        // --- PÁGINAS DESTACADAS ---
-        function openAllPagesView() {
-            const b = allBooks.find(x => x.id === currentBookId);
-            let content = (b.pages || []).map((p, i) => `<div style="margin-bottom:30px; border-bottom:1px solid #333; padding-bottom:20px;"><img src="${p.img}" style="width:100%; cursor:zoom-in" onclick="zoomImg(${i})"><p>Página ${p.num}</p><button onclick="delP(${i})" style="color:red; background:none; border:none; cursor:pointer;">Borrar</button></div>`).join('');
-            showModal(`<div style="background:#141414; width:100%; height:100%; overflow-y:auto; padding:20px;"><h2>Páginas Destacadas</h2><button onclick="openAddPageModal()" style="background:white;color:black;padding:10px;margin-bottom:20px;">+ Añadir</button>${content}<button onclick="closeModal()" style="width:100%;margin-top:20px;background:#444;color:white;padding:10px;border:none;">Cerrar</button></div>`);
+        async function saveComment() { books.find(x=>x.id===curId).comment = document.getElementById('edit-comment').value; await save(); closeModal(); showDetail(curId); }
+        async function saveProfile() { 
+            const f = document.getElementById('np-file').files[0]; let av = '👤'; if(f) av = await uploadToBucket(f);
+            profiles.push({name:document.getElementById('np-name').value.toUpperCase(), avatar:av}); await save(); closeModal(); renderProfs(); 
         }
-        function openAddPageModal() { showModal(`<div class="modal-content"><h2>Añadir Página</h2><input type="number" id="pn" placeholder="Nº"><textarea id="pc" placeholder="Nota"></textarea><input type="file" id="pf"><div class="modal-footer"><button onclick="openAllPagesView()" style="background:#444;color:white">Cancelar</button><button onclick="saveP()" style="background:var(--accent);color:white">Guardar</button></div></div>`); }
-        async function saveP() {
-            const btn = event.target; btn.disabled = true; btn.innerText = "Subiendo...";
-            const f = document.getElementById('pf').files[0]; if(!f) return;
-            const img = await uploadToBucket(f);
-            allBooks.find(x => x.id === currentBookId).pages.push({ num: document.getElementById('pn').value, comm: document.getElementById('pc').value, img: img });
-            await sync(); openAllPagesView();
-        }
-        async function delP(idx) { if(confirm("¿Borrar?")) { allBooks.find(x => x.id === currentBookId).pages.splice(idx,1); await sync(); openAllPagesView(); } }
+        function doSort(k) { sortKey=k; render(); closeModal(); }
+        function closeModal() { document.getElementById('modal-wrapper').style.display='none'; }
+        function closeDetail() { document.getElementById('detail-view').style.display='none'; document.getElementById('app-ui').style.display='grid'; render(); }
+        function openComment() { openModal('comment'); }
+        function openSort() { openModal('sort'); }
+        async function toggleFav() { const b=books.find(x=>x.id===curId); b.fav=!b.fav; await save(); showDetail(curId); }
+        async function togglePend() { const b=books.find(x=>x.id===curId); b.pend=!b.pend; await save(); showDetail(curId); }
+        async function deleteBook() { if(confirm("¿Borrar?")) { books=books.filter(x=>x.id!==curId); await save(); closeDetail(); } }
+        function setFilter(f) { filter=f; render(); document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active')); document.getElementById('btn-'+f).classList.add('active'); }
+        function logout() { localStorage.removeItem('bf_user'); location.reload(); }
 
-        // --- ZOOM ---
-        function zoomImg(idx) { currentZoomIdx = idx; document.getElementById('zoom-img').src = allBooks.find(x => x.id === currentBookId).pages[idx].img; document.getElementById('zoom-overlay').style.display = 'flex'; }
-        function changeZoomIdx(dir, event) { event.stopPropagation(); const p = allBooks.find(x => x.id === currentBookId).pages; currentZoomIdx = (currentZoomIdx + dir + p.length) % p.length; document.getElementById('zoom-img').src = p[currentZoomIdx].img; }
-
-        // --- AJUSTES Y PERFILES ---
-        function openCreateProfileModal() { showModal(`<div class="modal-content"><h2>Nuevo Perfil</h2><input type="text" id="p-n" placeholder="Nombre"><input type="file" id="p-a"><div class="modal-footer"><button onclick="closeModal()" style="background:#444;color:white">Cancelar</button><button onclick="saveNewProf()" style="background:var(--accent);color:white">Crear</button></div></div>`); }
-        async function saveNewProf() {
-            const btn = event.target; btn.disabled = true; btn.innerText = "Subiendo...";
-            const f = document.getElementById('p-a').files[0]; let a = '👤'; if(f) a = await uploadToBucket(f);
-            profiles.push({name: document.getElementById('p-n').value.toUpperCase(), avatar: a});
-            await sync(); closeModal(); renderProfiles();
-        }
-        function openSettingsModal() { const p = profiles.find(x => x.name === currentUser); showModal(`<div class="modal-content"><h2>Ajustes</h2><input type="text" id="un" value="${p.name}"><button onclick="exportL()" style="width:100%;background:#333;color:white;padding:10px;margin:15px 0;border:none">💾 Exportar</button><button onclick="document.getElementById('if').click()" style="width:100%;background:#333;color:white;padding:10px;border:none">📂 Importar</button><input type="file" id="if" style="display:none" onchange="importL(event)"><div class="modal-footer"><button onclick="closeModal()" style="background:#444;color:white">Cancelar</button><button onclick="saveProfile()" style="background:var(--accent);color:white">Guardar</button></div></div>`); }
-        async function saveProfile() { const n = document.getElementById('un').value.toUpperCase(); profiles.find(p => p.name === currentUser).name = n; allBooks.forEach(b => { if(b.userId === currentUser) b.userId = n; }); currentUser = n; await sync(); location.reload(); }
-        function exportL() { const data = allBooks.filter(b => b.userId === currentUser); const blob = new Blob([JSON.stringify(data)], {type:"application/json"}); const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `backup_${currentUser}.json`; a.click(); }
-        function importL(e) { const r = new FileReader(); r.onload = async ev => { const imb = JSON.parse(ev.target.result); imb.forEach(b => b.userId = currentUser); allBooks = [...allBooks, ...imb]; await sync(); renderBooks(); closeModal(); }; r.readAsText(e.target.files[0]); }
-
-        // --- FILTROS Y ORDEN ---
-        function openSortModal() { showModal(`<div class="modal-content"><h2>Ordenar</h2><button onclick="sortB('title')" style="width:100%;margin-bottom:10px">🔤 Título</button><button onclick="sortB('year')" style="width:100%;margin-bottom:10px">📅 Año</button><button onclick="sortB('readDate')" style="width:100%;margin-bottom:10px">📖 Fecha Lectura</button><button onclick="sortB('rating')" style="width:100%">⭐ Estrellas</button><button onclick="closeModal()" style="margin-top:15px;background:none;color:#888;border:none;">Cerrar</button></div>`); }
-        function sortB(k) { 
-            allBooks.sort((a,b) => {
-                let valA = (a[k]||"").toString(); let valB = (b[k]||"").toString();
-                if(k === 'year' || k === 'readDate' || k === 'rating') return valB.localeCompare(valA, undefined, {numeric:true});
-                return valA.localeCompare(valB);
-            }); 
-            renderBooks(); closeModal(); 
-        }
-
-        // --- UTILIDADES GLOBALES ---
-        function showCategory(cat) { currentCat = cat; document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active')); document.getElementById('btn-'+cat)?.classList.add('active'); closeBookDetail(); renderBooks(); }
-        function closeBookDetail() { document.getElementById('book-detail-view').style.display = 'none'; document.getElementById('books-grid-container').style.display = 'block'; }
-        function logout() { document.getElementById('main-interface').style.display = 'none'; document.getElementById('profile-selection').style.display = 'flex'; document.querySelector('.sidebar').classList.remove('mobile-active'); }
-        function showModal(c) { document.getElementById('modal-dynamic-content').innerHTML = c; document.getElementById('modal-overlay').style.display = 'flex'; }
-        function closeModal() { document.getElementById('modal-overlay').style.display = 'none'; }
-        async function toggleFavorite() { const b = allBooks.find(x => x.id === currentBookId); b.favorite = !b.favorite; document.getElementById('heart-svg').classList.toggle('active-heart', b.favorite); await sync(); }
-        async function toggleMark() { const b = allBooks.find(x => x.id === currentBookId); b.marked = !b.marked; document.getElementById('mark-svg').classList.toggle('active-mark', b.marked); await sync(); }
-        async function togglePend() { const b = allBooks.find(x => x.id === currentBookId); b.isPend = !b.isPend; document.getElementById('pend-svg').classList.toggle('active-pend', b.isPend); await sync(); }
-        async function deleteBook() { if(confirm("¿Borrar libro?")) { allBooks = allBooks.filter(b => b.id !== currentBookId); await sync(); closeBookDetail(); renderBooks(); } }
+        init();
     </script>
 </body>
 </html>
