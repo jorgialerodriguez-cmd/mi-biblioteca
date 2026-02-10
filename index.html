@@ -260,8 +260,20 @@
 
     <script>
         // CONFIGURACIÓN FIREBASE
-        const db = firebase.initializeApp({ apiKey: "AIzaSyAoXp6vTOEhk3UCt-SmjNLmb2SUQaZERXc", authDomain: "bookflix-34356.firebaseapp.com", projectId: "bookflix-34356", storageBucket: "bookflix-34356.firebasestorage.app", messagingSenderId: "567651297193", appId: "1:567651297193:web:48175e8d3697d4d52686b8" }).firestore();
+        // 1. Configuración con los nuevos datos del plan Blaze
+        const firebaseConfig = {
+            apiKey: "AIzaSyAoXp6vTOEhk3UCt-SmjNLmb2SUQaZERXc",
+            authDomain: "bookflix-34356.firebaseapp.com",
+            projectId: "bookflix-34356",
+            // Aquí es donde pones el nombre de tu nuevo bucket de pago
+            storageBucket: "TU_NUEVO_BUCKET_AQUI.firebasestorage.app", 
+            messagingSenderId: "567651297193",
+            appId: "1:567651297193:web:48175e8d3697d4d52686b8"
+        };
         
+        // 2. Inicialización corregida
+        const app = firebase.initializeApp(firebaseConfig);
+        const db = app.firestore();
         // ESTADO GLOBAL
         let books=[], profiles=[], user=null, curId=null, filter='all', zIdx=0, sortKey='title', sortOrder=1;
 
