@@ -490,8 +490,7 @@
         function openSettings(){ const p=profiles.find(x=>x.name===user); modal(`<h3>Ajustes</h3><label>Nombre</label><input id="sn" class="input-field" value="${p.name}"><label>Foto</label><input id="sf" type="file" class="input-field"><button class="btn-main" onclick="saveSet()">Guardar</button><hr style="border-color:#333;margin:20px 0"><button class="btn-sec" onclick="logout()" style="color:#ff4444;border-color:#ff4444">Cerrar Sesión</button><button class="btn-sec" onclick="closeModal()">Cerrar</button>`); }
         async function saveSet(){ const n=document.getElementById('sn').value.toUpperCase(), f=document.getElementById('sf').files[0]; profiles.find(x=>x.name===user).name=n; user=n; localStorage.setItem('bf_user', user); if(f) profiles.find(x=>x.name===user).avatar=await procImg(f); await saveProfilesToDB(); location.reload(); }
         
-// --- PROCESADOR IMG (HÍBRIDO: Fondo Oscuro + JPG Ligero) ---
-       
+// --- PROCESADOR DE IMAGEN (SOLUCIÓN FINAL: JPG LIGERO + FONDO GRIS) ---
         function procImg(f){ 
             return new Promise(r=>{ 
                 const rd=new FileReader(); 
@@ -500,17 +499,23 @@
                     i.src=e.target.result; 
                     i.onload=()=>{ 
                         const c=document.createElement('canvas'); 
-                        // Mantenemos el tamaño controlado (800px)
+                        const ctx = c.getContext('2d');
+
+                        // 1. Redimensionar a 800px (Para que quepa en la base de datos)
                         const max=800;
                         if(i.width>max){ c.width=max; c.height=i.height*(max/i.width); }
                         else{ c.width=i.width; c.height=i.height; }
                         
-                        // Dibujamos la imagen tal cual (sin inventar fondos)
-                        c.getContext('2d').drawImage(i,0,0,c.width,c.height); 
+                        // 2. FONDO GRIS NEUTRO
+                        // Usamos gris para que se vea bien tanto si la imagen tiene letras blancas como negras
+                        ctx.fillStyle = '#aaaaaa'; 
+                        ctx.fillRect(0,0,c.width,c.height);
                         
-                        // CLAVE: Usamos PNG. Es el formato más "honesto", 
-                        // guarda lo que ves sin poner cosas negras o blancas raras.
-                        r(c.toDataURL('image/png')); 
+                        // 3. DIBUJAR IMAGEN ENCIMA
+                        ctx.drawImage(i,0,0,c.width,c.height); 
+                        
+                        // 4. GUARDAR COMO JPG (Importante para que no se bloquee)
+                        r(c.toDataURL('image/jpeg', 0.6)); 
                     }
                 }; 
                 rd.readAsDataURL(f); 
