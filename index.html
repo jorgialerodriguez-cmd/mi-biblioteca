@@ -276,32 +276,55 @@
         // ESTADO GLOBAL
         let books=[], profiles=[], user=null, curId=null, filter='all', zIdx=0, sortKey='title', sortOrder=1;
 
-        async function init(){
-            try {
-                // USAMOS "lib_v9_stable" PARA QUE SEA UNA BASE LIMPIA Y NUEVA
-                const d = (await db.collection('data').doc('lib_v9_stable').get()).data();
-                books = d?.books||[]; profiles = d?.profiles||[];
-                
-                // Si no hay perfiles, crear los básicos
-                if(!profiles.length) { 
-                    profiles=[{name:"JORGE",avatar:"https://ui-avatars.com/api/?name=Jorge&background=random"},{name:"ALEJANDRA",avatar:"https://ui-avatars.com/api/?name=Alejandra&background=random"}]; 
-                    save(); 
-                }
-                
-                // (1) PERSISTENCIA DE SESIÓN
-                const savedUser = localStorage.getItem('bf_user');
-                // Verificar si el usuario guardado aún existe en la base de datos
-                if(savedUser && profiles.find(p => p.name === savedUser)) {
-                    login(profiles.find(p => p.name === savedUser));
-                } else {
-                    renderProfs();
-                }
+        // --- NUEVA CONFIGURACIÓN DE BASE DE DATOS (VERSION 10) ---
+const COL_BOOKS = 'library_v10_books'; // Colección infinita para libros
+const DOC_CONFIG = 'library_v10_config'; // Documento solo para perfiles
 
-            } catch(e){
-                console.error(e);
-                alert("Error de conexión. Intenta recargar.");
-            }
+async function init() {
+    try {
+        // 1. CARGAR PERFILES (Archivo ligero)
+        const configDoc = await db.collection('data').doc(DOC_CONFIG).get();
+        if (configDoc.exists) {
+            profiles = configDoc.data().profiles || [];
+        } else {
+            // Perfiles por defecto si es la primera vez
+            profiles = [{name:"JORGE",avatar:"https://ui-avatars.com/api/?name=Jorge&background=random"},{name:"ALEJANDRA",avatar:"https://ui-avatars.com/api/?name=Alejandra&background=random"}];
+            await db.collection('data').doc(DOC_CONFIG).set({profiles});
         }
+
+        // 2. CARGAR LIBROS (Uno a uno, sin límites de espacio)
+        const snapshot = await db.collection(COL_BOOKS).get();
+        books = snapshot.docs.map(doc => doc.data());
+
+        // 3. LOGIN AUTOMÁTICO
+        const savedUser = localStorage.getItem('bf_user');
+        if(savedUser && profiles.find(p => p.name === savedUser)) {
+            login(profiles.find(p => p.name === savedUser));
+        } else {
+            renderProfs();
+        }
+    } catch (e) { 
+        console.error(e); 
+        renderProfs(); 
+    }
+}
+
+// --- NUEVAS FUNCIONES DE GUARDADO (IMPORTANTES) ---
+
+// Guardar UN SOLO libro (Rápido y sin límite)
+async function saveBookToDB(book) {
+    await db.collection(COL_BOOKS).doc(book.id).set(book);
+}
+
+// Borrar UN SOLO libro
+async function deleteBookFromDB(id) {
+    await db.collection(COL_BOOKS).doc(id).delete();
+}
+
+// Guardar SOLO perfiles
+async function saveProfilesToDB() {
+    await db.collection('data').doc(DOC_CONFIG).set({profiles});
+}
 
         async function save(){ 
             // Guardado silencioso
@@ -521,7 +544,34 @@
         
         function exportD() { const a=document.createElement('a'); a.href="data:text/json;charset=utf-8,"+encodeURIComponent(JSON.stringify(books.filter(b=>b.userId===user))); a.download=`backup_${user}.json`; a.click(); }
         function importD(i) { const r=new FileReader(); r.onload=async e=>{ try{const d=JSON.parse(e.target.result); d.forEach(b=>b.userId=user); books=[...books,...d]; await save(); alert("Importado"); location.reload();}catch(x){alert("Error JSON");} }; r.readAsText(i.files[0]); }
-        function procImg(f){ return new Promise(r=>{ const rd=new FileReader(); rd.onload=e=>{ const i=new Image(); i.src=e.target.result; i.onload=()=>{ const c=document.createElement('canvas'); const s=800/i.width; c.width=Math.min(i.width,800); c.height=i.height*(c.width/i.width); c.getContext('2d').drawImage(i,0,0,c.width,c.height); r(c.toDataURL('image/jpeg',0.7)); }}; rd.readAsDataURL(f); }); }
+        // PROCESADOR DE IMÁGENES (CORREGIDO: FONDO BLANCO)
+        function procImg(f) {
+            return new Promise(r => {
+                const rd = new FileReader();
+                rd.onload = e => {
+                    const i = new Image();
+                    i.src = e.target.result;
+                    i.onload = () => {
+                        const c = document.createElement('canvas');
+                        const ctx = c.getContext('2d'); // Obtenemos el pincel
+                        
+                        // Redimensionar (máximo 800px)
+                        const s = 800 / i.width;
+                        c.width = Math.min(i.width, 800);
+                        c.height = i.height * (c.width / i.width);
+                        
+                        // --- TRUCO PARA EVITAR EL NEGRO ---
+                        ctx.fillStyle = '#ffffff'; // Elegir color blanco
+                        ctx.fillRect(0, 0, c.width, c.height); // Pintar fondo
+                        // ----------------------------------
+        
+                        ctx.drawImage(i, 0, 0, c.width, c.height);
+                        r(c.toDataURL('image/jpeg', 0.7)); // Calidad media para ahorrar espacio
+                    }
+                };
+                rd.readAsDataURL(f);
+            });
+        }}
     </script>
 </body>
 </html>
