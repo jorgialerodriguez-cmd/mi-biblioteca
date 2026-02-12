@@ -280,34 +280,51 @@
 const COL_BOOKS = 'library_v10_books'; // Colección infinita para libros
 const DOC_CONFIG = 'library_v10_config'; // Documento solo para perfiles
 
-async function init() {
-    try {
-        // 1. CARGAR PERFILES (Archivo ligero)
-        const configDoc = await db.collection('data').doc(DOC_CONFIG).get();
-        if (configDoc.exists) {
-            profiles = configDoc.data().profiles || [];
-        } else {
-            // Perfiles por defecto si es la primera vez
-            profiles = [{name:"JORGE",avatar:"https://ui-avatars.com/api/?name=Jorge&background=random"},{name:"ALEJANDRA",avatar:"https://ui-avatars.com/api/?name=Alejandra&background=random"}];
-            await db.collection('data').doc(DOC_CONFIG).set({profiles});
-        }
+// --- FUNCIÓN INIT CORREGIDA (RECUPERACIÓN AUTOMÁTICA) ---
+        async function init(){
+            try {
+                // 1. Intentar cargar configuración
+                const configDoc = await db.collection('data').doc(DOC_CONFIG).get();
+                
+                if (configDoc.exists) {
+                    profiles = configDoc.data().profiles || [];
+                }
 
-        // 2. CARGAR LIBROS (Uno a uno, sin límites de espacio)
-        const snapshot = await db.collection(COL_BOOKS).get();
-        books = snapshot.docs.map(doc => doc.data());
+                // --- CORRECCIÓN DE SEGURIDAD ---
+                // Si la base de datos existe pero la lista de perfiles está VACÍA,
+                // forzamos la creación de los perfiles por defecto para no quedarnos fuera.
+                if (profiles.length === 0) {
+                    profiles = [
+                        {name:"JORGE", avatar:"https://ui-avatars.com/api/?name=Jorge&background=random&color=fff"},
+                        {name:"ALEJANDRA", avatar:"https://ui-avatars.com/api/?name=Alejandra&background=random&color=fff"}
+                    ];
+                    // Guardamos estos perfiles básicos para arreglar la base de datos
+                    await db.collection('data').doc(DOC_CONFIG).set({profiles});
+                }
+                // -------------------------------
 
-        // 3. LOGIN AUTOMÁTICO
-        const savedUser = localStorage.getItem('bf_user');
-        if(savedUser && profiles.find(p => p.name === savedUser)) {
-            login(profiles.find(p => p.name === savedUser));
-        } else {
-            renderProfs();
+                // 2. Cargar Libros
+                const snapshot = await db.collection(COL_BOOKS).get();
+                books = snapshot.docs.map(doc => doc.data());
+
+                // 3. Login Automático
+                const savedUser = localStorage.getItem('bf_user');
+                
+                // Solo entramos si el usuario guardado REALMENTE existe en la lista de perfiles
+                if (savedUser && profiles.find(p => p.name === savedUser)) {
+                    login(profiles.find(p => p.name === savedUser));
+                } else {
+                    renderProfs(); // Si no, vamos a la pantalla de selección
+                }
+
+            } catch(e){
+                console.error("Error crítico:", e);
+                alert("Hubo un error de conexión. Se cargarán perfiles de emergencia.");
+                // Si todo falla (sin internet), cargamos esto para que la app no se quede blanca
+                profiles = [{name:"JORGE",avatar:""},{name:"ALEJANDRA",avatar:""}];
+                renderProfs();
+            }
         }
-    } catch (e) { 
-        console.error(e); 
-        renderProfs(); 
-    }
-}
 
 // --- NUEVAS FUNCIONES DE GUARDADO (IMPORTANTES) ---
 
