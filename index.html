@@ -79,7 +79,15 @@
 
         .pages-feed { display: flex; flex-direction: column; gap: 30px; margin-top: 20px; padding-bottom: 100px; }
         .page-card { background: #111; border: 1px solid #333; border-radius: 8px; overflow: hidden; position: relative; transition: 0.2s; }
-        .page-card img { width: 100%; display: block; cursor: zoom-in; }
+        /* MEJORA VISUAL DE CAPTURAS: Filtro para resaltar texto y sombra para dar profundidad */
+        .page-card img { 
+            width: 100%; 
+            display: block; 
+            cursor: zoom-in; 
+            filter: contrast(1.05) brightness(1.05); /* Resalta el texto */
+            box-shadow: 0 5px 15px rgba(0,0,0,0.5); /* Da profundidad 3D */
+            border-bottom: 1px solid #222;
+        }
         .page-footer { padding: 15px; background: #161616; }
         .page-controls { display: flex; gap: 8px; }
         .ctrl-btn { background: #222; border: 1px solid #333; color: #aaa; border-radius: 4px; width: 30px; height: 30px; cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 14px; }
@@ -355,7 +363,7 @@
             btn.innerText="Subiendo..."; btn.disabled=true;
 
             try {
-                // USAREMOS EL PROCESADOR CORREGIDO AL FINAL
+                // USAREMOS EL PROCESADOR MEJORADO
                 const img = await procImg(f); 
                 await db.collection(COL_BOOKS).doc(curId).collection('pages').add({ num: num, note: note, img: img, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
                 closeModal(); openPages(); 
@@ -387,122 +395,92 @@
         function openSettings(){ const p=profiles.find(x=>x.name===user); modal(`<h3>Ajustes</h3><label>Nombre</label><input id="sn" class="input-field" value="${p.name}"><label>Foto</label><input id="sf" type="file" class="input-field"><button class="btn-main" onclick="saveSet()">Guardar</button><hr style="border-color:#333;margin:20px 0"><button class="btn-sec" onclick="exportD()">💾 Exportar Todo</button><button class="btn-sec" onclick="document.getElementById('imp').click()">📂 Importar Copia</button><input id="imp" type="file" hidden onchange="importD(this)"><hr style="border-color:#333;margin:20px 0"><button class="btn-sec" onclick="logout()" style="color:#ff4444;border-color:#ff4444">Cerrar Sesión</button><button class="btn-sec" onclick="closeModal()">Cerrar</button>`); }
         async function saveSet(){ const n=document.getElementById('sn').value.toUpperCase(), f=document.getElementById('sf').files[0]; profiles.find(x=>x.name===user).name=n; user=n; localStorage.setItem('bf_user', user); if(f) profiles.find(x=>x.name===user).avatar=await procImg(f); await saveProfilesToDB(); location.reload(); }
         
-        // --- EXPORTAR TODO (CORREGIDO PARA INCLUIR PÁGINAS) ---
+        // --- EXPORTAR TODO ---
         async function exportD() { 
             const btn = document.querySelector('button[onclick="exportD()"]');
             const originalText = btn.innerText;
             btn.innerText = "⏳ Recopilando datos...";
-            
             try {
-                // 1. Obtener libros del usuario
                 const userBooks = books.filter(b => b.userId === user);
                 const fullBackup = [];
-
-                // 2. Recorrer cada libro y buscar sus páginas
                 for (let book of userBooks) {
-                    let bookCopy = JSON.parse(JSON.stringify(book)); // Clonar objeto
+                    let bookCopy = JSON.parse(JSON.stringify(book));
                     const pagesSnap = await db.collection(COL_BOOKS).doc(book.id).collection('pages').get();
-                    const pagesData = pagesSnap.docs.map(doc => ({ ...doc.data(), id: doc.id })); // Incluir ID para referencia
-                    
-                    bookCopy.pagesBackup = pagesData; // Guardar páginas dentro del libro
+                    const pagesData = pagesSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
+                    bookCopy.pagesBackup = pagesData;
                     fullBackup.push(bookCopy);
                 }
-
-                // 3. Descargar JSON
                 const a = document.createElement('a');
                 a.href = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(fullBackup));
                 a.download = `BookFlix_Backup_${user}_${new Date().toISOString().slice(0,10)}.json`;
                 a.click();
                 btn.innerText = originalText;
-                
-            } catch(e) {
-                console.error(e);
-                alert("Error al exportar: " + e.message);
-                btn.innerText = "Error";
-            }
+            } catch(e) { console.error(e); alert("Error al exportar: " + e.message); btn.innerText = "Error"; }
         }
 
-        // --- IMPORTAR TODO (CORREGIDO PARA RESTAURAR PÁGINAS) ---
+        // --- IMPORTAR TODO ---
         function importD(i) { 
             const r = new FileReader(); 
             r.onload = async e => { 
                 try {
                     if(!confirm("⚠️ Esto añadirá los libros del archivo a tu biblioteca actual. ¿Continuar?")) return;
-                    
                     const importedBooks = JSON.parse(e.target.result); 
-                    
                     let count = 0;
                     for(const b of importedBooks){ 
-                        // 1. Crear nuevo ID para evitar conflictos
                         const oldPages = b.pagesBackup || [];
-                        delete b.pagesBackup; // Limpiar antes de guardar el libro
-                        
-                        b.userId = user; // Asignar al usuario actual
-                        b.id = Date.now().toString() + Math.random().toString().slice(2,5); // Nuevo ID único
-                        
-                        // 2. Guardar Libro
+                        delete b.pagesBackup;
+                        b.userId = user;
+                        b.id = Date.now().toString() + Math.random().toString().slice(2,5);
                         await saveBookToDB(b);
                         books.push(b);
-
-                        // 3. Restaurar Páginas (si las tiene)
                         for(const p of oldPages) {
-                            // Limpiar datos innecesarios de la página importada
-                            const pageData = {
-                                num: p.num,
-                                note: p.note,
-                                img: p.img,
-                                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-                            };
+                            const pageData = { num: p.num, note: p.note, img: p.img, createdAt: firebase.firestore.FieldValue.serverTimestamp() };
                             await db.collection(COL_BOOKS).doc(b.id).collection('pages').add(pageData);
                         }
                         count++;
                     } 
-                    alert(`✅ Importados ${count} libros con sus páginas.`); 
-                    location.reload(); 
-                } catch(x) { 
-                    console.error(x);
-                    alert("Error al importar: El archivo no es válido."); 
-                } 
+                    alert(`✅ Importados ${count} libros con sus páginas.`); location.reload(); 
+                } catch(x) { console.error(x); alert("Error al importar: El archivo no es válido."); } 
             }; 
             r.readAsText(i.files[0]); 
         }
 
-        // --- PROCESADOR DE IMAGEN (SOLUCIÓN DEFINITIVA PARA CAPTURAS MÓVILES) ---
+        // --- PROCESADOR DE IMAGEN CORREGIDO (Solución Bug Fondo Gris) ---
         function procImg(f){ 
             return new Promise((resolve, reject) => { 
+                if(!f) reject("No file");
                 const rd = new FileReader(); 
                 rd.onload = e => { 
                     const i = new Image(); 
-                    i.src = e.target.result; 
                     i.onload = () => { 
                         const c = document.createElement('canvas'); 
                         const ctx = c.getContext('2d'); 
                         
-                        // 1. Redimensionar (Max 800px para que pese poco)
-                        const maxW = 800;
-                        if (i.width > maxW) {
-                            c.width = maxW;
-                            c.height = i.height * (maxW / i.width);
-                        } else {
-                            c.width = i.width;
-                            c.height = i.height;
-                        }
+                        // Límites
+                        const MAX_W = 1000;
+                        const MAX_H = 1500;
+                        let w = i.width;
+                        let h = i.height;
 
-                        // 2. FONDO DE SEGURIDAD (Gris Oscuro #222)
-                        // IMPORTANTE: Si subes una captura PNG transparente, se verá gris oscuro de fondo.
-                        // Si subes una foto JPG normal, esto quedará tapado por la foto.
-                        // Esto arregla el "cuadrado blanco" o "cuadrado negro".
-                        ctx.fillStyle = '#222222'; 
-                        ctx.fillRect(0, 0, c.width, c.height); 
+                        // Redimensionar manteniendo ratio
+                        if(w > h) { if(w > MAX_W) { h *= MAX_W/w; w = MAX_W; } }
+                        else { if(h > MAX_H) { w *= MAX_H/h; h = MAX_H; } }
+
+                        c.width = w; 
+                        c.height = h;
+
+                        // Fondo Negro (por si hay transparencias en la captura)
+                        ctx.fillStyle = '#000000';
+                        ctx.fillRect(0,0,w,h);
+
+                        // Dibujar
+                        ctx.drawImage(i, 0, 0, w, h); 
                         
-                        // 3. DIBUJAR IMAGEN ENCIMA
-                        ctx.drawImage(i, 0, 0, c.width, c.height); 
-                        
-                        // 4. GUARDAR COMO JPG (Compresión 0.7)
-                        // Forzamos JPG para que el archivo pese 10 veces menos que un PNG de captura
-                        resolve(c.toDataURL('image/jpeg', 0.7)); 
+                        // Exportar
+                        resolve(c.toDataURL('image/jpeg', 0.8)); 
                     };
-                    i.onerror = () => reject("Error al procesar imagen");
+                    i.onerror = () => reject("Error imagen");
+                    i.src = e.target.result; // Asignar src después del onload
                 }; 
                 rd.readAsDataURL(f); 
             }); 
