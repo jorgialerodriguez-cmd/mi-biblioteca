@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BookFlix V16 (Final)</title>
+    <title>BookFlix V17 (Final)</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore-compat.js"></script>
@@ -14,7 +14,7 @@
 
         :root { --bg: #000000; --panel: #121212; --primary: #E50914; --text: #ffffff; --gray: #b3b3b3; --border: #333; }
         * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-        body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; margin: 0; padding: 0; }
+        body { background: var(--bg); color: var(--text); font-family: 'Inter', sans-serif; margin: 0; padding: 0; overscroll-behavior: none; }
         ::-webkit-scrollbar { width: 6px; }
         ::-webkit-scrollbar-track { background: var(--bg); }
         ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
@@ -70,13 +70,16 @@
         .icon-circle { width: 45px; height: 45px; border-radius: 50%; border: 1px solid #444; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: 0.2s; }
         .icon-circle.active { background: var(--primary); border-color: var(--primary); color: white; }
 
-        /* ESTRELLAS CORREGIDAS: Fuente Arial para evitar errores de ancho en Android/iOS */
-        .stars-ui { display: inline-flex; font-size: 2.5rem; color: #333; cursor: pointer; position: relative; line-height: 1; user-select: none; font-family: Arial, sans-serif; }
-        .star { position: relative; width: 1em; display: inline-block; }
-        .star span { pointer-events: none; }
-        .star-fill { position: absolute; top:0; left:0; overflow:hidden; width:0; color:#ffd700; }
-        .star.full .star-fill { width: 100%; }
-        .star.half .star-fill { width: 50%; } /* 50% exacto */
+        /* ESTRELLAS CORREGIDAS V2: Uso de gradiente CSS para precisión matemática */
+        .stars-ui { display: inline-flex; font-size: 2.5rem; color: #333; cursor: pointer; user-select: none; font-family: Arial, sans-serif; letter-spacing: 2px; }
+        .star { position: relative; display: inline-block; }
+        .star::before { content: '★'; color: #333; } /* Estrella vacía fondo */
+        .star.full::before { content: '★'; color: #ffd700; } /* Estrella llena */
+        .star.half::after { 
+            content: '★'; position: absolute; left: 0; top: 0; 
+            width: 50%; overflow: hidden; color: #ffd700;
+            pointer-events: none;
+        }
 
         .pages-feed { display: flex; flex-direction: column; gap: 30px; margin-top: 20px; padding-bottom: 100px; }
         .page-card { background: #111; border: 1px solid #333; border-radius: 8px; overflow: hidden; position: relative; transition: 0.2s; }
@@ -100,15 +103,15 @@
         .sort-opt.selected { color: white; font-weight: bold; background: #222; }
         .sort-opt:hover { background: #222; }
 
-        /* ZOOM MEJORADO */
-        #zoom-ol { position: fixed; inset: 0; background: black; z-index: 20000; display: none; justify-content: center; align-items: center; overflow: auto; }
-        /* La imagen en zoom tiene transición suave y límites iniciales */
-        #zoom-img { max-width: 95%; max-height: 85vh; border-radius: 4px; box-shadow: 0 0 50px black; cursor: zoom-in; transition: transform 0.2s ease, width 0.3s ease; transform-origin: top center; }
-        /* Clase para estado de zoom activado */
-        #zoom-img.zoomed { max-width: none; max-height: none; width: 200%; cursor: zoom-out; margin: 20px auto; }
+        /* VISOR ZOOM FLUIDO */
+        #zoom-ol { position: fixed; inset: 0; background: black; z-index: 20000; display: none; align-items: center; justify-content: center; touch-action: none; overflow: hidden; }
+        /* Contenedor de la imagen que recibirá las transformaciones */
+        #zoom-container { width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; pointer-events: none; }
+        #zoom-img { max-width: 100%; max-height: 100%; pointer-events: auto; transform-origin: center center; will-change: transform; box-shadow: 0 0 50px black; }
         
         .zoom-arr { position: fixed; background: rgba(50,50,50,0.5); color: white; border: none; padding: 20px; font-size: 2rem; cursor: pointer; top: 50%; transform: translateY(-50%); border-radius: 50%; z-index: 20002; }
         .zoom-arr:hover { background: var(--primary); }
+        .zoom-controls { position: fixed; bottom: 30px; display: flex; gap: 20px; z-index: 20002; }
     </style>
 </head>
 <body onload="init()">
@@ -139,7 +142,7 @@
                 <h2 id="section-title" style="margin:0">Biblioteca</h2>
                 <div style="display:flex; gap:10px;">
                     <button onclick="openSort()" style="background:#222; border:1px solid #333; color:white; padding:10px; border-radius:6px; cursor:pointer;" title="Ordenar"><span class="material-icons-round">sort</span></button>
-                    <input id="main-search" class="search-bar" placeholder="Título, Autor, Año..." oninput="render(this.value)">
+                    <input id="main-search" class="search-bar" placeholder="Título, Autor, 2026..." oninput="render(this.value)">
                 </div>
             </div>
             <div id="grid" class="grid"></div>
@@ -200,11 +203,15 @@
         </div>
     </div>
 
-    <div id="zoom-ol" onclick="closeZoom()">
+    <div id="zoom-ol">
         <button id="z-l" class="zoom-arr" style="left:15px" onclick="navZ(-1, event)">❮</button>
-        <img id="zoom-img" onclick="toggleZoom(event)">
+        <div id="zoom-container">
+            <img id="zoom-img">
+        </div>
         <button id="z-r" class="zoom-arr" style="right:15px" onclick="navZ(1, event)">❯</button>
-        <div style="position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.5); padding:5px 15px; border-radius:20px; color:white; font-size:0.8rem; pointer-events:none;">Toca la imagen para ampliar</div>
+        <div class="zoom-controls">
+            <button onclick="closeZoom()" style="background:rgba(0,0,0,0.6); color:white; border:1px solid #555; padding:8px 15px; border-radius:20px;">Cerrar ✕</button>
+        </div>
     </div>
 
     <div id="modal-wrapper" class="modal-overlay"><div id="modal-c" class="modal-box"></div></div>
@@ -258,19 +265,20 @@
         function logout() { localStorage.removeItem('bf_user'); location.reload(); }
         function nav(f, btn){ filter=f; document.querySelectorAll('.menu-btn, .mob-btn').forEach(b=>b.classList.remove('active')); if(btn) btn.classList.add('active'); render(); }
 
-        // --- RENDERIZADO CON BÚSQUEDA MEJORADA (TITULO, AUTOR, AÑO) ---
+        // --- RENDERIZADO CON BÚSQUEDA AVANZADA (TITULO, AUTOR, AÑO, FECHA) ---
         function render(q=""){
             const g=document.getElementById('grid'); g.innerHTML='';
             let l = books.filter(b=>b.userId===user);
             if(filter!=='all') l=l.filter(b=>b[filter==='fav'?'favorite':(filter==='marked'?'marked':'isPend')]);
             
-            // FILTRO MEJORADO
+            // LOGICA NUEVA DE BÚSQUEDA
             if(q) {
-                const lowerQ = q.toLowerCase();
+                const low = q.toLowerCase();
                 l = l.filter(b => 
-                    b.title.toLowerCase().includes(lowerQ) || 
-                    b.author.toLowerCase().includes(lowerQ) || 
-                    (b.year && b.year.toString().includes(lowerQ))
+                    b.title.toLowerCase().includes(low) || 
+                    b.author.toLowerCase().includes(low) || 
+                    (b.year && b.year.toString().includes(low)) ||
+                    (b.readDate && b.readDate.toString().includes(low)) // Busca también en fecha lectura
                 );
             }
             
@@ -294,7 +302,7 @@
             }
         }
 
-        // DETALLE MEJORADO (FILTRO AUTOR + ZOOM PORTADA)
+        // DETALLE
         function openDet(id){
             curId=id; const b=books.find(x=>x.id===id);
             document.getElementById('detail-view').style.display='block';
@@ -303,7 +311,6 @@
             
             const authElem = document.getElementById('d-author');
             authElem.innerText=b.author;
-            // Al hacer clic en el autor, filtramos
             authElem.onclick = () => filterByAuthor(b.author);
 
             document.getElementById('d-meta').innerText = `Año: ${b.year||'-'} • Leído: ${b.readDate||'-'}`;
@@ -322,13 +329,18 @@
         function closeDetail(){ document.getElementById('detail-view').style.display='none'; }
         async function toggle(k){ const b=books.find(x=>x.id===curId); b[k]=!b[k]; await saveBookToDB(b); openDet(curId); render(); }
 
+        // --- ESTRELLAS REVISADAS ---
         function renderStars(){
             const r = books.find(x=>x.id===curId)?.rating || 0;
             const c=document.getElementById('stars-box'); c.innerHTML='';
             for(let i=1; i<=5; i++){
                 const s=document.createElement('div'); s.className='star';
-                if(r>=i) s.classList.add('full'); else if(r>=i-0.5) s.classList.add('half');
-                s.innerHTML='★<span class="star-fill">★</span>'; s.onclick=(e)=>rate(i,e); c.appendChild(s);
+                // Añadimos clases para control CSS preciso
+                if(r>=i) s.classList.add('full'); 
+                else if(r>=i-0.5) s.classList.add('half');
+                
+                s.onclick=(e)=>rate(i,e); 
+                c.appendChild(s);
             }
         }
         async function rate(i,e){
@@ -373,11 +385,13 @@
         function editP(pageId) { const p = currentPages.find(x => x.id === pageId); modal(`<h3>Editar</h3><input id="epn" class="input-field" value="${p.num}"><textarea id="ept" class="input-field" rows="4">${p.note}</textarea><button class="btn-main" onclick="saveEdP('${pageId}')">Guardar</button><button class="btn-sec" onclick="closeModal()">Cancelar</button>`); }
         async function saveEdP(pageId) { const num = document.getElementById('epn').value; const note = document.getElementById('ept').value; await db.collection(COL_BOOKS).doc(curId).collection('pages').doc(pageId).update({num:num, note:note}); closeModal(); openPages(); }
 
-        // --- LOGICA DE ZOOM MEJORADA (TAP TO ZOOM) ---
+        // --- SISTEMA DE ZOOM FLUIDO (PINCH & PAN) ---
+        let zoomState = { scale: 1, panning: false, startX: 0, startY: 0, x: 0, y: 0 };
         let isCoverZoom = false;
 
         function openZoom(i){ 
-            zIdx=i; isCoverZoom=false; updZ(); 
+            zIdx=i; isCoverZoom=false; 
+            resetZoom(); updZ(); 
             document.getElementById('zoom-ol').style.display='flex'; 
             document.getElementById('z-l').style.display='block';
             document.getElementById('z-r').style.display='block';
@@ -386,7 +400,7 @@
         function viewCover() {
             const b=books.find(x=>x.id===curId);
             document.getElementById('zoom-img').src = b.cover;
-            document.getElementById('zoom-img').classList.remove('zoomed');
+            resetZoom();
             document.getElementById('zoom-ol').style.display='flex';
             document.getElementById('z-l').style.display='none';
             document.getElementById('z-r').style.display='none';
@@ -397,29 +411,68 @@
             e.stopPropagation(); 
             if(isCoverZoom) return;
             zIdx=(zIdx+d+currentPages.length)%currentPages.length; 
+            resetZoom();
             updZ(); 
         }
 
-        function updZ(){ 
-            const img = document.getElementById('zoom-img');
-            img.classList.remove('zoomed'); // Reset zoom al cambiar de foto
-            img.src=currentPages[zIdx].img; 
-        }
+        function updZ(){ document.getElementById('zoom-img').src=currentPages[zIdx].img; }
+        function closeZoom() { document.getElementById('zoom-ol').style.display='none'; }
 
-        function toggleZoom(e) {
-            e.stopPropagation(); // Evitar cerrar el overlay
-            const img = document.getElementById('zoom-img');
-            img.classList.toggle('zoomed');
-        }
+        // LÓGICA TÁCTIL (Pinch-to-zoom)
+        const zoomImg = document.getElementById('zoom-img');
+        const zoomContainer = document.getElementById('zoom-ol');
 
-        function closeZoom() {
-            // Solo cierra si no estás haciendo zoom
-            const img = document.getElementById('zoom-img');
-            if(img.classList.contains('zoomed')) {
-                img.classList.remove('zoomed');
-            } else {
-                document.getElementById('zoom-ol').style.display='none';
+        zoomImg.addEventListener('touchstart', handleTouchStart, {passive: false});
+        zoomImg.addEventListener('touchmove', handleTouchMove, {passive: false});
+        zoomImg.addEventListener('touchend', handleTouchEnd);
+        
+        // Variables táctiles
+        let startDist = 0;
+        let startScale = 1;
+        
+        function handleTouchStart(e) {
+            if (e.touches.length === 2) {
+                e.preventDefault();
+                startDist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
+                startScale = zoomState.scale;
+            } else if (e.touches.length === 1 && zoomState.scale > 1) {
+                zoomState.panning = true;
+                zoomState.startX = e.touches[0].pageX - zoomState.x;
+                zoomState.startY = e.touches[0].pageY - zoomState.y;
             }
+        }
+
+        function handleTouchMove(e) {
+            if (e.touches.length === 2) {
+                e.preventDefault();
+                const dist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
+                if (startDist > 0) {
+                    const diff = dist - startDist;
+                    // Sensibilidad del zoom
+                    const newScale = startScale + diff * 0.005;
+                    zoomState.scale = Math.min(Math.max(1, newScale), 4); // Min 1x, Max 4x
+                    updateTransform();
+                }
+            } else if (e.touches.length === 1 && zoomState.panning && zoomState.scale > 1) {
+                e.preventDefault(); // Evitar scroll del fondo
+                zoomState.x = e.touches[0].pageX - zoomState.startX;
+                zoomState.y = e.touches[0].pageY - zoomState.startY;
+                updateTransform();
+            }
+        }
+
+        function handleTouchEnd(e) {
+            if (e.touches.length < 2) startDist = 0;
+            if (e.touches.length === 0) zoomState.panning = false;
+        }
+
+        function resetZoom(){
+            zoomState = { scale: 1, panning: false, startX: 0, startY: 0, x: 0, y: 0 };
+            updateTransform();
+        }
+
+        function updateTransform() {
+            zoomImg.style.transform = `translate(${zoomState.x}px, ${zoomState.y}px) scale(${zoomState.scale})`;
         }
 
         // --- RESTO DEL CRUD ---
