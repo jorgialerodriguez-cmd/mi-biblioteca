@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BookFlix V13 SUPER FINAL</title>
+    <title>BookFlix V15 (Final)</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore-compat.js"></script>
@@ -202,6 +202,7 @@
     <div id="modal-wrapper" class="modal-overlay"><div id="modal-c" class="modal-box"></div></div>
 
     <script>
+        // --- CONFIGURACIÓN FIREBASE ---
         const firebaseConfig = {
             apiKey: "AIzaSyAoXp6vTOEhk3UCt-SmjNLmb2SUQaZERXc",
             authDomain: "bookflix-34356.firebaseapp.com",
@@ -217,14 +218,14 @@
         // ESTADO GLOBAL
         let books=[], profiles=[], user=null, curId=null, filter='all', zIdx=0, sortKey='title', sortOrder=1;
         
-        // --- ARQUITECTURA INFINITA (V13) ---
+        // --- COLECCIONES INFINITAS (V15) ---
         const COL_BOOKS = 'library_v10_books'; 
         const DOC_CONFIG = 'library_v10_config';
-        // Las páginas ahora viven en: library_v10_books/{bookID}/pages/{pageID}
 
+        // --- INICIO ---
         async function init(){
             try {
-                // 1. CARGAR CONFIGURACIÓN
+                // 1. CARGAR PERFILES
                 const configDoc = await db.collection('data').doc(DOC_CONFIG).get();
                 if(configDoc.exists) {
                     profiles = configDoc.data().profiles || [];
@@ -233,7 +234,7 @@
                     await db.collection('data').doc(DOC_CONFIG).set({profiles});
                 }
 
-                // 2. CARGAR LIBROS (Solo portadas y datos, carga super rápida)
+                // 2. CARGAR LIBROS
                 const snapshot = await db.collection(COL_BOOKS).get();
                 books = snapshot.docs.map(doc => doc.data());
 
@@ -244,18 +245,14 @@
                 } else {
                     renderProfs();
                 }
-            } catch(e){ console.error(e); alert("Error de conexión"); renderProfs(); }
+            } catch(e){ console.error(e); renderProfs(); }
         }
 
-        // --- FUNCIONES DE BASE DE DATOS ---
-        async function saveBookToDB(book) {
-            await db.collection(COL_BOOKS).doc(book.id).set(book);
-        }
-        async function saveProfilesToDB() {
-            await db.collection('data').doc(DOC_CONFIG).set({profiles});
-        }
+        // --- GUARDADO ---
+        async function saveBookToDB(book) { await db.collection(COL_BOOKS).doc(book.id).set(book); }
+        async function saveProfilesToDB() { await db.collection('data').doc(DOC_CONFIG).set({profiles}); }
 
-        // --- UI GENERAL ---
+        // --- UI ---
         function renderProfs() {
             document.getElementById('profile-screen').style.display = 'flex';
             const c=document.getElementById('profiles-container'); c.innerHTML='';
@@ -265,14 +262,7 @@
                 c.appendChild(d);
             });
         }
-        function login(p){ 
-            user=p.name; localStorage.setItem('bf_user', user); 
-            document.getElementById('profile-screen').style.display='none'; 
-            document.getElementById('app-ui').style.display='grid'; 
-            document.getElementById('sb-name').innerText=p.name; 
-            document.getElementById('sb-avatar').src=p.avatar; 
-            render(); 
-        }
+        function login(p){ user=p.name; localStorage.setItem('bf_user', user); document.getElementById('profile-screen').style.display='none'; document.getElementById('app-ui').style.display='grid'; document.getElementById('sb-name').innerText=p.name; document.getElementById('sb-avatar').src=p.avatar; render(); }
         function logout() { localStorage.removeItem('bf_user'); location.reload(); }
         function nav(f, btn){ filter=f; document.querySelectorAll('.menu-btn, .mob-btn').forEach(b=>b.classList.remove('active')); if(btn) btn.classList.add('active'); render(); }
 
@@ -284,10 +274,7 @@
             
             l.sort((a,b) => {
                 let valA = a[sortKey] || ""; let valB = b[sortKey] || "";
-                if(sortKey === 'readDate') {
-                     const yearA = (valA.match(/\d{4}/) || [0])[0]; const yearB = (valB.match(/\d{4}/) || [0])[0];
-                     if(yearA != 0 && yearB != 0) return (yearA - yearB) * sortOrder;
-                }
+                if(sortKey === 'readDate') { const yearA = (valA.match(/\d{4}/) || [0])[0]; const yearB = (valB.match(/\d{4}/) || [0])[0]; if(yearA != 0 && yearB != 0) return (yearA - yearB) * sortOrder; }
                 if(sortKey === 'year' || sortKey === 'rating') return (valA - valB) * sortOrder;
                 return valA.toString().localeCompare(valB.toString()) * sortOrder;
             });
@@ -305,7 +292,7 @@
             }
         }
 
-        // --- DETALLE DEL LIBRO ---
+        // DETALLE
         function openDet(id){
             curId=id; const b=books.find(x=>x.id===id);
             document.getElementById('detail-view').style.display='block';
@@ -326,9 +313,7 @@
             for(let i=1; i<=5; i++){
                 const s=document.createElement('div'); s.className='star';
                 if(r>=i) s.classList.add('full'); else if(r>=i-0.5) s.classList.add('half');
-                s.innerHTML='★<span class="star-fill">★</span>';
-                s.onclick=(e)=>rate(i,e);
-                c.appendChild(s);
+                s.innerHTML='★<span class="star-fill">★</span>'; s.onclick=(e)=>rate(i,e); c.appendChild(s);
             }
         }
         async function rate(i,e){
@@ -337,113 +322,52 @@
         }
         function hoverStar(e){}
 
-        // --- GESTIÓN DE PÁGINAS (V13: SUBCOLECCIONES) ---
-        let currentPages = []; // Memoria temporal para las páginas del libro abierto
+        // --- GESTIÓN DE PÁGINAS (SUBCOLECCIONES) ---
+        let currentPages = [];
 
         async function openPages(){
             const c = document.getElementById('pages-list'); 
             c.innerHTML='<p style="text-align:center; color:#888; margin-top:50px;">Cargando páginas...</p>';
             document.getElementById('pages-view').style.display='block';
 
-            // 1. CARGAR PÁGINAS DESDE LA SUBCOLECCIÓN
             const snap = await db.collection(COL_BOOKS).doc(curId).collection('pages').get();
             currentPages = snap.docs.map(doc => ({id: doc.id, ...doc.data()}));
-            
-            // 2. ORDENAR POR NÚMERO DE PÁGINA
             currentPages.sort((a,b) => parseInt(a.num) - parseInt(b.num));
-
             renderPagesList();
         }
 
         function renderPagesList() {
             const c = document.getElementById('pages-list'); c.innerHTML='';
-            if(currentPages.length === 0) {
-                c.innerHTML='<p style="text-align:center; color:#666; margin-top:50px;">No hay páginas guardadas.</p>';
-                return;
-            }
-
+            if(currentPages.length === 0) { c.innerHTML='<p style="text-align:center; color:#666; margin-top:50px;">No hay páginas guardadas.</p>'; return; }
             currentPages.forEach((p, idx) => {
                 const card = document.createElement('div'); card.className='page-card';
-                card.innerHTML=`
-                    <img src="${p.img}" onclick="openZoom(${idx})">
-                    <div class="page-footer">
-                        <div style="display:flex; justify-content:space-between; margin-bottom:10px">
-                            <span style="color:var(--primary); font-weight:bold;">PÁGINA ${p.num}</span>
-                            <div class="page-controls">
-                                <button class="ctrl-btn" onclick="editP('${p.id}')">✎</button>
-                                <button class="ctrl-btn" onclick="delP('${p.id}')" style="color:#ff4444; border-color:#ff4444">✕</button>
-                            </div>
-                        </div>
-                        <p style="color:#ddd; margin:0; white-space:pre-wrap;">${p.note}</p>
-                    </div>`;
+                card.innerHTML=`<img src="${p.img}" onclick="openZoom(${idx})"><div class="page-footer"><div style="display:flex; justify-content:space-between; margin-bottom:10px"><span style="color:var(--primary); font-weight:bold;">PÁGINA ${p.num}</span><div class="page-controls"><button class="ctrl-btn" onclick="editP('${p.id}')">✎</button><button class="ctrl-btn" onclick="delP('${p.id}')" style="color:#ff4444; border-color:#ff4444">✕</button></div></div><p style="color:#ddd; margin:0; white-space:pre-wrap;">${p.note}</p></div>`;
                 c.appendChild(card);
             });
         }
-
-        // ORDENAR (Ahora es solo visual, ya que se ordenan al cargar)
-        function sortPagesAuto() { 
-            currentPages.sort((a,b) => parseInt(a.num) - parseInt(b.num));
-            renderPagesList();
-        }
-
-        // AÑADIR PÁGINA (Guardar en Subcolección)
+        function sortPagesAuto() { currentPages.sort((a,b) => parseInt(a.num) - parseInt(b.num)); renderPagesList(); }
         function openAddPage(){ modal(`<h3>Añadir Página</h3><input id="pn" class="input-field" placeholder="Nº de Página" type="number"><input id="pt" class="input-field" placeholder="Comentario / Nota"><label style="color:#888; font-size:0.8rem">Foto (Obligatorio)</label><input id="pf" type="file" class="input-field"><button id="btn-save-page" class="btn-main" onclick="savePage()">Guardar Foto</button><button class="btn-sec" onclick="closeModal()">Cancelar</button>`); }
 
         async function savePage(){ 
-            const f=document.getElementById('pf').files[0]; 
-            const num=document.getElementById('pn').value;
-            const note=document.getElementById('pt').value;
-            const btn=document.getElementById('btn-save-page');
-
+            const f=document.getElementById('pf').files[0]; const num=document.getElementById('pn').value; const note=document.getElementById('pt').value; const btn=document.getElementById('btn-save-page');
             if(!f) return alert("⚠️ Falta la foto");
             if(!num) return alert("⚠️ Pon el número de página");
-
             btn.innerText="Subiendo..."; btn.disabled=true;
 
             try {
+                // USAREMOS EL PROCESADOR CORREGIDO AL FINAL
                 const img = await procImg(f); 
-                // GUARDAR EN FIREBASE (SUBCOLECCIÓN)
-                await db.collection(COL_BOOKS).doc(curId).collection('pages').add({
-                    num: num, 
-                    note: note, 
-                    img: img,
-                    createdAt: firebase.firestore.FieldValue.serverTimestamp() // Para ordenar si hiciera falta
-                });
-                
-                closeModal(); 
-                openPages(); // Recargar lista
-            } catch(e) {
-                console.error(e); alert("Error al subir");
-                btn.innerText="Guardar Foto"; btn.disabled=false;
-            }
+                await db.collection(COL_BOOKS).doc(curId).collection('pages').add({ num: num, note: note, img: img, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
+                closeModal(); openPages(); 
+            } catch(e) { console.error(e); alert("Error al subir"); btn.innerText="Guardar Foto"; btn.disabled=false; }
         }
 
-        // BORRAR PÁGINA
-        async function delP(pageId){ 
-            if(confirm("¿Borrar esta página?")){ 
-                await db.collection(COL_BOOKS).doc(curId).collection('pages').doc(pageId).delete();
-                openPages(); // Recargar
-            } 
-        }
-
-        // EDITAR PÁGINA
-        function editP(pageId) { 
-            const p = currentPages.find(x => x.id === pageId);
-            modal(`<h3>Editar</h3><input id="epn" class="input-field" value="${p.num}"><textarea id="ept" class="input-field" rows="4">${p.note}</textarea><button class="btn-main" onclick="saveEdP('${pageId}')">Guardar Cambios</button><button class="btn-sec" onclick="closeModal()">Cancelar</button>`); 
-        }
-        async function saveEdP(pageId) { 
-            const num = document.getElementById('epn').value;
-            const note = document.getElementById('ept').value;
-            await db.collection(COL_BOOKS).doc(curId).collection('pages').doc(pageId).update({num:num, note:note});
-            closeModal(); 
-            openPages(); 
-        }
-
-        // ZOOM
+        async function delP(pageId){ if(confirm("¿Borrar esta página?")){ await db.collection(COL_BOOKS).doc(curId).collection('pages').doc(pageId).delete(); openPages(); } }
+        function editP(pageId) { const p = currentPages.find(x => x.id === pageId); modal(`<h3>Editar</h3><input id="epn" class="input-field" value="${p.num}"><textarea id="ept" class="input-field" rows="4">${p.note}</textarea><button class="btn-main" onclick="saveEdP('${pageId}')">Guardar</button><button class="btn-sec" onclick="closeModal()">Cancelar</button>`); }
+        async function saveEdP(pageId) { const num = document.getElementById('epn').value; const note = document.getElementById('ept').value; await db.collection(COL_BOOKS).doc(curId).collection('pages').doc(pageId).update({num:num, note:note}); closeModal(); openPages(); }
         function openZoom(i){ zIdx=i; updZ(); document.getElementById('zoom-ol').style.display='flex'; }
         function navZ(d,e){ e.stopPropagation(); zIdx=(zIdx+d+currentPages.length)%currentPages.length; updZ(); }
         function updZ(){ document.getElementById('zoom-img').src=currentPages[zIdx].img; }
-
 
         // --- CRUD LIBROS ---
         function modal(h){ document.getElementById('modal-c').innerHTML=h; document.getElementById('modal-wrapper').style.display='flex'; }
@@ -453,73 +377,136 @@
         function toggleOrder(){ sortOrder*=-1; openSort(); render(); }
         
         function openAdd(){ modal(`<h3>Nuevo Libro</h3><input id="t" class="input-field" placeholder="Título"><input id="a" class="input-field" placeholder="Autor"><input id="y" type="number" class="input-field" placeholder="Año"><input id="rd" class="input-field" placeholder="Fecha Lectura"><label style="color:#888;font-size:0.8rem">Portada</label><input id="f" type="file" class="input-field"><button class="btn-main" onclick="addB()">Guardar</button><button class="btn-sec" onclick="closeModal()">Cancelar</button>`); }
+        async function addB(){ const t=document.getElementById('t').value; if(!t)return; const f=document.getElementById('f').files[0]; const c=f?await procImg(f):"https://via.placeholder.com/300x450"; const nb={id:Date.now().toString(), userId:user, title:t, author:document.getElementById('a').value.toUpperCase(), year:document.getElementById('y').value, readDate:document.getElementById('rd').value, cover:c, favorite:false, marked:false, isPend:false, rating:0, comment:""}; books.push(nb); await saveBookToDB(nb); closeModal(); render(); }
         
-        async function addB(){ 
-            const t=document.getElementById('t').value; if(!t)return; 
-            const f=document.getElementById('f').files[0]; 
-            const c=f?await procImg(f):"https://via.placeholder.com/300x450"; 
-            const nb={id:Date.now().toString(), userId:user, title:t, author:document.getElementById('a').value.toUpperCase(), year:document.getElementById('y').value, readDate:document.getElementById('rd').value, cover:c, favorite:false, marked:false, isPend:false, rating:0, comment:""}; // Quitamos pages:[] porque ahora va aparte
-            books.push(nb); 
-            await saveBookToDB(nb); 
-            closeModal(); render(); 
-        }
-
         function openEdit(){ const b=books.find(x=>x.id===curId); modal(`<h3>Editar</h3><input id="et" class="input-field" value="${b.title}"><input id="ea" class="input-field" value="${b.author}"><input id="ey" class="input-field" value="${b.year}"><input id="ed" class="input-field" value="${b.readDate}"><input id="ef" type="file" class="input-field"><button class="btn-main" onclick="saveEd()">Guardar</button><button class="btn-sec" onclick="closeModal()">Cancelar</button>`); }
         async function saveEd(){ const b=books.find(x=>x.id===curId); b.title=document.getElementById('et').value; b.author=document.getElementById('ea').value; b.year=document.getElementById('ey').value; b.readDate=document.getElementById('ed').value; const f=document.getElementById('ef').files[0]; if(f) b.cover=await procImg(f); await saveBookToDB(b); closeModal(); openDet(curId); render(); }
-        
-        // BORRAR LIBRO COMPLETO (Incluidas sus páginas)
-        async function delBook(){ 
-            if(confirm("¿Eliminar libro y todas sus páginas?")){ 
-                // 1. Borrar subcolección de páginas
-                const pagesSnap = await db.collection(COL_BOOKS).doc(curId).collection('pages').get();
-                const batch = db.batch();
-                pagesSnap.forEach(doc => batch.delete(doc.ref));
-                await batch.commit();
-
-                // 2. Borrar libro
-                await db.collection(COL_BOOKS).doc(curId).delete();
-                books=books.filter(x=>x.id!==curId); 
-                document.getElementById('detail-view').style.display='none'; 
-                render(); 
-            } 
-        }
-
+        async function delBook(){ if(confirm("¿Eliminar libro y todas sus páginas?")){ const pagesSnap = await db.collection(COL_BOOKS).doc(curId).collection('pages').get(); const batch = db.batch(); pagesSnap.forEach(doc => batch.delete(doc.ref)); await batch.commit(); await db.collection(COL_BOOKS).doc(curId).delete(); books=books.filter(x=>x.id!==curId); document.getElementById('detail-view').style.display='none'; render(); } }
         function openComm(){ const b=books.find(x=>x.id===curId); modal(`<h3>Opinión</h3><textarea id="nc" class="input-field" rows="6">${b.comment||''}</textarea><button class="btn-main" onclick="saveC()">Guardar</button><button class="btn-sec" onclick="closeModal()">Cancelar</button>`); }
         async function saveC(){ const b=books.find(x=>x.id===curId); b.comment=document.getElementById('nc').value; await saveBookToDB(b); closeModal(); openDet(curId); }
-        
-        function openSettings(){ const p=profiles.find(x=>x.name===user); modal(`<h3>Ajustes</h3><label>Nombre</label><input id="sn" class="input-field" value="${p.name}"><label>Foto</label><input id="sf" type="file" class="input-field"><button class="btn-main" onclick="saveSet()">Guardar</button><hr style="border-color:#333;margin:20px 0"><button class="btn-sec" onclick="logout()" style="color:#ff4444;border-color:#ff4444">Cerrar Sesión</button><button class="btn-sec" onclick="closeModal()">Cerrar</button>`); }
+        function openSettings(){ const p=profiles.find(x=>x.name===user); modal(`<h3>Ajustes</h3><label>Nombre</label><input id="sn" class="input-field" value="${p.name}"><label>Foto</label><input id="sf" type="file" class="input-field"><button class="btn-main" onclick="saveSet()">Guardar</button><hr style="border-color:#333;margin:20px 0"><button class="btn-sec" onclick="exportD()">💾 Exportar Todo</button><button class="btn-sec" onclick="document.getElementById('imp').click()">📂 Importar Copia</button><input id="imp" type="file" hidden onchange="importD(this)"><hr style="border-color:#333;margin:20px 0"><button class="btn-sec" onclick="logout()" style="color:#ff4444;border-color:#ff4444">Cerrar Sesión</button><button class="btn-sec" onclick="closeModal()">Cerrar</button>`); }
         async function saveSet(){ const n=document.getElementById('sn').value.toUpperCase(), f=document.getElementById('sf').files[0]; profiles.find(x=>x.name===user).name=n; user=n; localStorage.setItem('bf_user', user); if(f) profiles.find(x=>x.name===user).avatar=await procImg(f); await saveProfilesToDB(); location.reload(); }
         
-// --- PROCESADOR DE IMAGEN (SOLUCIÓN FINAL: JPG LIGERO + FONDO GRIS) ---
-        function procImg(f){ 
-            return new Promise(r=>{ 
-                const rd=new FileReader(); 
-                rd.onload=e=>{ 
-                    const i=new Image(); 
-                    i.src=e.target.result; 
-                    i.onload=()=>{ 
-                        const c=document.createElement('canvas'); 
-                        const ctx = c.getContext('2d');
+        // --- EXPORTAR TODO (CORREGIDO PARA INCLUIR PÁGINAS) ---
+        async function exportD() { 
+            const btn = document.querySelector('button[onclick="exportD()"]');
+            const originalText = btn.innerText;
+            btn.innerText = "⏳ Recopilando datos...";
+            
+            try {
+                // 1. Obtener libros del usuario
+                const userBooks = books.filter(b => b.userId === user);
+                const fullBackup = [];
 
-                        // 1. Redimensionar a 800px (Para que quepa en la base de datos)
-                        const max=800;
-                        if(i.width>max){ c.width=max; c.height=i.height*(max/i.width); }
-                        else{ c.width=i.width; c.height=i.height; }
+                // 2. Recorrer cada libro y buscar sus páginas
+                for (let book of userBooks) {
+                    let bookCopy = JSON.parse(JSON.stringify(book)); // Clonar objeto
+                    const pagesSnap = await db.collection(COL_BOOKS).doc(book.id).collection('pages').get();
+                    const pagesData = pagesSnap.docs.map(doc => ({ ...doc.data(), id: doc.id })); // Incluir ID para referencia
+                    
+                    bookCopy.pagesBackup = pagesData; // Guardar páginas dentro del libro
+                    fullBackup.push(bookCopy);
+                }
+
+                // 3. Descargar JSON
+                const a = document.createElement('a');
+                a.href = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(fullBackup));
+                a.download = `BookFlix_Backup_${user}_${new Date().toISOString().slice(0,10)}.json`;
+                a.click();
+                btn.innerText = originalText;
+                
+            } catch(e) {
+                console.error(e);
+                alert("Error al exportar: " + e.message);
+                btn.innerText = "Error";
+            }
+        }
+
+        // --- IMPORTAR TODO (CORREGIDO PARA RESTAURAR PÁGINAS) ---
+        function importD(i) { 
+            const r = new FileReader(); 
+            r.onload = async e => { 
+                try {
+                    if(!confirm("⚠️ Esto añadirá los libros del archivo a tu biblioteca actual. ¿Continuar?")) return;
+                    
+                    const importedBooks = JSON.parse(e.target.result); 
+                    
+                    let count = 0;
+                    for(const b of importedBooks){ 
+                        // 1. Crear nuevo ID para evitar conflictos
+                        const oldPages = b.pagesBackup || [];
+                        delete b.pagesBackup; // Limpiar antes de guardar el libro
                         
-                        // 2. FONDO GRIS NEUTRO
-                        // Usamos gris para que se vea bien tanto si la imagen tiene letras blancas como negras
-                        ctx.fillStyle = '#aaaaaa'; 
-                        ctx.fillRect(0,0,c.width,c.height);
+                        b.userId = user; // Asignar al usuario actual
+                        b.id = Date.now().toString() + Math.random().toString().slice(2,5); // Nuevo ID único
+                        
+                        // 2. Guardar Libro
+                        await saveBookToDB(b);
+                        books.push(b);
+
+                        // 3. Restaurar Páginas (si las tiene)
+                        for(const p of oldPages) {
+                            // Limpiar datos innecesarios de la página importada
+                            const pageData = {
+                                num: p.num,
+                                note: p.note,
+                                img: p.img,
+                                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+                            };
+                            await db.collection(COL_BOOKS).doc(b.id).collection('pages').add(pageData);
+                        }
+                        count++;
+                    } 
+                    alert(`✅ Importados ${count} libros con sus páginas.`); 
+                    location.reload(); 
+                } catch(x) { 
+                    console.error(x);
+                    alert("Error al importar: El archivo no es válido."); 
+                } 
+            }; 
+            r.readAsText(i.files[0]); 
+        }
+
+        // --- PROCESADOR DE IMAGEN (SOLUCIÓN DEFINITIVA PARA CAPTURAS MÓVILES) ---
+        function procImg(f){ 
+            return new Promise((resolve, reject) => { 
+                const rd = new FileReader(); 
+                rd.onload = e => { 
+                    const i = new Image(); 
+                    i.src = e.target.result; 
+                    i.onload = () => { 
+                        const c = document.createElement('canvas'); 
+                        const ctx = c.getContext('2d'); 
+                        
+                        // 1. Redimensionar (Max 800px para que pese poco)
+                        const maxW = 800;
+                        if (i.width > maxW) {
+                            c.width = maxW;
+                            c.height = i.height * (maxW / i.width);
+                        } else {
+                            c.width = i.width;
+                            c.height = i.height;
+                        }
+
+                        // 2. FONDO DE SEGURIDAD (Gris Oscuro #222)
+                        // IMPORTANTE: Si subes una captura PNG transparente, se verá gris oscuro de fondo.
+                        // Si subes una foto JPG normal, esto quedará tapado por la foto.
+                        // Esto arregla el "cuadrado blanco" o "cuadrado negro".
+                        ctx.fillStyle = '#222222'; 
+                        ctx.fillRect(0, 0, c.width, c.height); 
                         
                         // 3. DIBUJAR IMAGEN ENCIMA
-                        ctx.drawImage(i,0,0,c.width,c.height); 
+                        ctx.drawImage(i, 0, 0, c.width, c.height); 
                         
-                        // 4. GUARDAR COMO JPG (Importante para que no se bloquee)
-                        r(c.toDataURL('image/jpeg', 0.6)); 
-                    }
+                        // 4. GUARDAR COMO JPG (Compresión 0.7)
+                        // Forzamos JPG para que el archivo pese 10 veces menos que un PNG de captura
+                        resolve(c.toDataURL('image/jpeg', 0.7)); 
+                    };
+                    i.onerror = () => reject("Error al procesar imagen");
                 }; 
                 rd.readAsDataURL(f); 
             }); 
         }
-    </script></body>
+    </script>
+</body>
 </html>
