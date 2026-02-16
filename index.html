@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>BookFlix V15 (Final)</title>
+    <title>BookFlix V16 (Final)</title>
     
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-firestore-compat.js"></script>
@@ -70,24 +70,17 @@
         .icon-circle { width: 45px; height: 45px; border-radius: 50%; border: 1px solid #444; display: flex; justify-content: center; align-items: center; cursor: pointer; transition: 0.2s; }
         .icon-circle.active { background: var(--primary); border-color: var(--primary); color: white; }
 
-        .stars-ui { display: inline-flex; font-size: 2.5rem; color: #333; cursor: pointer; position: relative; line-height: 1; user-select: none; }
+        /* ESTRELLAS CORREGIDAS: Fuente Arial para evitar errores de ancho en Android/iOS */
+        .stars-ui { display: inline-flex; font-size: 2.5rem; color: #333; cursor: pointer; position: relative; line-height: 1; user-select: none; font-family: Arial, sans-serif; }
         .star { position: relative; width: 1em; display: inline-block; }
         .star span { pointer-events: none; }
         .star-fill { position: absolute; top:0; left:0; overflow:hidden; width:0; color:#ffd700; }
         .star.full .star-fill { width: 100%; }
-        .star.half .star-fill { width: 50%; }
+        .star.half .star-fill { width: 50%; } /* 50% exacto */
 
         .pages-feed { display: flex; flex-direction: column; gap: 30px; margin-top: 20px; padding-bottom: 100px; }
         .page-card { background: #111; border: 1px solid #333; border-radius: 8px; overflow: hidden; position: relative; transition: 0.2s; }
-        /* MEJORA VISUAL DE CAPTURAS: Filtro para resaltar texto y sombra para dar profundidad */
-        .page-card img { 
-            width: 100%; 
-            display: block; 
-            cursor: zoom-in; 
-            filter: contrast(1.05) brightness(1.05); /* Resalta el texto */
-            box-shadow: 0 5px 15px rgba(0,0,0,0.5); /* Da profundidad 3D */
-            border-bottom: 1px solid #222;
-        }
+        .page-card img { width: 100%; display: block; cursor: zoom-in; filter: contrast(1.05) brightness(1.05); box-shadow: 0 5px 15px rgba(0,0,0,0.5); border-bottom: 1px solid #222; }
         .page-footer { padding: 15px; background: #161616; }
         .page-controls { display: flex; gap: 8px; }
         .ctrl-btn { background: #222; border: 1px solid #333; color: #aaa; border-radius: 4px; width: 30px; height: 30px; cursor: pointer; display: flex; justify-content: center; align-items: center; font-size: 14px; }
@@ -107,8 +100,14 @@
         .sort-opt.selected { color: white; font-weight: bold; background: #222; }
         .sort-opt:hover { background: #222; }
 
-        #zoom-ol { position: fixed; inset: 0; background: black; z-index: 20000; display: none; justify-content: center; align-items: center; }
-        .zoom-arr { position: absolute; background: rgba(50,50,50,0.5); color: white; border: none; padding: 20px; font-size: 2rem; cursor: pointer; top: 50%; transform: translateY(-50%); border-radius: 50%; z-index: 20001; }
+        /* ZOOM MEJORADO */
+        #zoom-ol { position: fixed; inset: 0; background: black; z-index: 20000; display: none; justify-content: center; align-items: center; overflow: auto; }
+        /* La imagen en zoom tiene transición suave y límites iniciales */
+        #zoom-img { max-width: 95%; max-height: 85vh; border-radius: 4px; box-shadow: 0 0 50px black; cursor: zoom-in; transition: transform 0.2s ease, width 0.3s ease; transform-origin: top center; }
+        /* Clase para estado de zoom activado */
+        #zoom-img.zoomed { max-width: none; max-height: none; width: 200%; cursor: zoom-out; margin: 20px auto; }
+        
+        .zoom-arr { position: fixed; background: rgba(50,50,50,0.5); color: white; border: none; padding: 20px; font-size: 2rem; cursor: pointer; top: 50%; transform: translateY(-50%); border-radius: 50%; z-index: 20002; }
         .zoom-arr:hover { background: var(--primary); }
     </style>
 </head>
@@ -140,7 +139,7 @@
                 <h2 id="section-title" style="margin:0">Biblioteca</h2>
                 <div style="display:flex; gap:10px;">
                     <button onclick="openSort()" style="background:#222; border:1px solid #333; color:white; padding:10px; border-radius:6px; cursor:pointer;" title="Ordenar"><span class="material-icons-round">sort</span></button>
-                    <input class="search-bar" placeholder="Buscar..." oninput="render(this.value)">
+                    <input id="main-search" class="search-bar" placeholder="Título, Autor, Año..." oninput="render(this.value)">
                 </div>
             </div>
             <div id="grid" class="grid"></div>
@@ -161,10 +160,10 @@
             <span style="color:#888; font-size:0.8rem; font-weight:bold;">DETALLES</span>
         </div>
         <div class="det-container">
-            <div><img id="d-img" style="width:100%; border-radius:8px; box-shadow:0 10px 30px black;"></div>
+            <div><img id="d-img" onclick="viewCover()" style="width:100%; border-radius:8px; box-shadow:0 10px 30px black; cursor:zoom-in;"></div>
             <div>
                 <h1 id="d-title" style="font-size:2rem; margin-bottom:5px; line-height:1.2;"></h1>
-                <h3 id="d-author" style="color:#aaa; margin-top:0; font-weight:400;"></h3>
+                <h3 id="d-author" style="color:#aaa; margin-top:0; font-weight:400; cursor:pointer; text-decoration:underline; text-decoration-color:#333;" title="Filtrar por autor"></h3>
                 <div class="action-row">
                     <div id="btn-fav" class="icon-circle" onclick="toggle('favorite')" title="Favorito"><span class="material-icons-round">favorite</span></div>
                     <div id="btn-mark" class="icon-circle" onclick="toggle('marked')" title="Marcador"><span class="material-icons-round">bookmark</span></div>
@@ -201,10 +200,11 @@
         </div>
     </div>
 
-    <div id="zoom-ol" onclick="this.style.display='none'">
-        <button class="zoom-arr" style="left:15px" onclick="navZ(-1, event)">❮</button>
-        <img id="zoom-img" style="max-width:95%; max-height:85vh; border-radius:4px; box-shadow:0 0 50px black;">
-        <button class="zoom-arr" style="right:15px" onclick="navZ(1, event)">❯</button>
+    <div id="zoom-ol" onclick="closeZoom()">
+        <button id="z-l" class="zoom-arr" style="left:15px" onclick="navZ(-1, event)">❮</button>
+        <img id="zoom-img" onclick="toggleZoom(event)">
+        <button id="z-r" class="zoom-arr" style="right:15px" onclick="navZ(1, event)">❯</button>
+        <div style="position:fixed; bottom:20px; left:50%; transform:translateX(-50%); background:rgba(0,0,0,0.5); padding:5px 15px; border-radius:20px; color:white; font-size:0.8rem; pointer-events:none;">Toca la imagen para ampliar</div>
     </div>
 
     <div id="modal-wrapper" class="modal-overlay"><div id="modal-c" class="modal-box"></div></div>
@@ -223,44 +223,28 @@
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
         
-        // ESTADO GLOBAL
         let books=[], profiles=[], user=null, curId=null, filter='all', zIdx=0, sortKey='title', sortOrder=1;
-        
-        // --- COLECCIONES INFINITAS (V15) ---
-        const COL_BOOKS = 'library_v10_books'; 
-        const DOC_CONFIG = 'library_v10_config';
+        const COL_BOOKS = 'library_v10_books'; const DOC_CONFIG = 'library_v10_config';
 
-        // --- INICIO ---
         async function init(){
             try {
-                // 1. CARGAR PERFILES
                 const configDoc = await db.collection('data').doc(DOC_CONFIG).get();
-                if(configDoc.exists) {
-                    profiles = configDoc.data().profiles || [];
-                } else {
+                if(configDoc.exists) profiles = configDoc.data().profiles || [];
+                else {
                     profiles = [{name:"JORGE",avatar:"https://ui-avatars.com/api/?name=Jorge&background=random"},{name:"ALEJANDRA",avatar:"https://ui-avatars.com/api/?name=Alejandra&background=random"}];
                     await db.collection('data').doc(DOC_CONFIG).set({profiles});
                 }
-
-                // 2. CARGAR LIBROS
                 const snapshot = await db.collection(COL_BOOKS).get();
                 books = snapshot.docs.map(doc => doc.data());
-
-                // 3. LOGIN
                 const savedUser = localStorage.getItem('bf_user');
-                if(savedUser && profiles.find(p => p.name === savedUser)) {
-                    login(profiles.find(p => p.name === savedUser));
-                } else {
-                    renderProfs();
-                }
+                if(savedUser && profiles.find(p => p.name === savedUser)) login(profiles.find(p => p.name === savedUser));
+                else renderProfs();
             } catch(e){ console.error(e); renderProfs(); }
         }
 
-        // --- GUARDADO ---
         async function saveBookToDB(book) { await db.collection(COL_BOOKS).doc(book.id).set(book); }
         async function saveProfilesToDB() { await db.collection('data').doc(DOC_CONFIG).set({profiles}); }
 
-        // --- UI ---
         function renderProfs() {
             document.getElementById('profile-screen').style.display = 'flex';
             const c=document.getElementById('profiles-container'); c.innerHTML='';
@@ -274,11 +258,21 @@
         function logout() { localStorage.removeItem('bf_user'); location.reload(); }
         function nav(f, btn){ filter=f; document.querySelectorAll('.menu-btn, .mob-btn').forEach(b=>b.classList.remove('active')); if(btn) btn.classList.add('active'); render(); }
 
+        // --- RENDERIZADO CON BÚSQUEDA MEJORADA (TITULO, AUTOR, AÑO) ---
         function render(q=""){
             const g=document.getElementById('grid'); g.innerHTML='';
             let l = books.filter(b=>b.userId===user);
             if(filter!=='all') l=l.filter(b=>b[filter==='fav'?'favorite':(filter==='marked'?'marked':'isPend')]);
-            if(q) l=l.filter(b=>b.title.toLowerCase().includes(q.toLowerCase()));
+            
+            // FILTRO MEJORADO
+            if(q) {
+                const lowerQ = q.toLowerCase();
+                l = l.filter(b => 
+                    b.title.toLowerCase().includes(lowerQ) || 
+                    b.author.toLowerCase().includes(lowerQ) || 
+                    (b.year && b.year.toString().includes(lowerQ))
+                );
+            }
             
             l.sort((a,b) => {
                 let valA = a[sortKey] || ""; let valB = b[sortKey] || "";
@@ -300,18 +294,31 @@
             }
         }
 
-        // DETALLE
+        // DETALLE MEJORADO (FILTRO AUTOR + ZOOM PORTADA)
         function openDet(id){
             curId=id; const b=books.find(x=>x.id===id);
             document.getElementById('detail-view').style.display='block';
             document.getElementById('d-img').src=b.cover;
             document.getElementById('d-title').innerText=b.title;
-            document.getElementById('d-author').innerText=b.author;
+            
+            const authElem = document.getElementById('d-author');
+            authElem.innerText=b.author;
+            // Al hacer clic en el autor, filtramos
+            authElem.onclick = () => filterByAuthor(b.author);
+
             document.getElementById('d-meta').innerText = `Año: ${b.year||'-'} • Leído: ${b.readDate||'-'}`;
             document.getElementById('d-comm').innerText = b.comment || "Sin comentarios";
             ['favorite','marked','isPend'].forEach(k => document.getElementById(k==='favorite'?'btn-fav':(k==='marked'?'btn-mark':'btn-pend')).classList.toggle('active', b[k]));
             renderStars();
         }
+
+        function filterByAuthor(name){
+            closeDetail();
+            const input = document.getElementById('main-search');
+            input.value = name;
+            render(name);
+        }
+
         function closeDetail(){ document.getElementById('detail-view').style.display='none'; }
         async function toggle(k){ const b=books.find(x=>x.id===curId); b[k]=!b[k]; await saveBookToDB(b); openDet(curId); render(); }
 
@@ -330,14 +337,12 @@
         }
         function hoverStar(e){}
 
-        // --- GESTIÓN DE PÁGINAS (SUBCOLECCIONES) ---
+        // --- GESTIÓN DE PÁGINAS ---
         let currentPages = [];
-
         async function openPages(){
             const c = document.getElementById('pages-list'); 
             c.innerHTML='<p style="text-align:center; color:#888; margin-top:50px;">Cargando páginas...</p>';
             document.getElementById('pages-view').style.display='block';
-
             const snap = await db.collection(COL_BOOKS).doc(curId).collection('pages').get();
             currentPages = snap.docs.map(doc => ({id: doc.id, ...doc.data()}));
             currentPages.sort((a,b) => parseInt(a.num) - parseInt(b.num));
@@ -361,32 +366,70 @@
             if(!f) return alert("⚠️ Falta la foto");
             if(!num) return alert("⚠️ Pon el número de página");
             btn.innerText="Subiendo..."; btn.disabled=true;
-
-            try {
-                // USAREMOS EL PROCESADOR MEJORADO
-                const img = await procImg(f); 
-                await db.collection(COL_BOOKS).doc(curId).collection('pages').add({ num: num, note: note, img: img, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
-                closeModal(); openPages(); 
-            } catch(e) { console.error(e); alert("Error al subir"); btn.innerText="Guardar Foto"; btn.disabled=false; }
+            try { const img = await procImg(f); await db.collection(COL_BOOKS).doc(curId).collection('pages').add({ num: num, note: note, img: img, createdAt: firebase.firestore.FieldValue.serverTimestamp() }); closeModal(); openPages(); } 
+            catch(e) { console.error(e); alert("Error al subir"); btn.innerText="Guardar Foto"; btn.disabled=false; }
         }
-
         async function delP(pageId){ if(confirm("¿Borrar esta página?")){ await db.collection(COL_BOOKS).doc(curId).collection('pages').doc(pageId).delete(); openPages(); } }
         function editP(pageId) { const p = currentPages.find(x => x.id === pageId); modal(`<h3>Editar</h3><input id="epn" class="input-field" value="${p.num}"><textarea id="ept" class="input-field" rows="4">${p.note}</textarea><button class="btn-main" onclick="saveEdP('${pageId}')">Guardar</button><button class="btn-sec" onclick="closeModal()">Cancelar</button>`); }
         async function saveEdP(pageId) { const num = document.getElementById('epn').value; const note = document.getElementById('ept').value; await db.collection(COL_BOOKS).doc(curId).collection('pages').doc(pageId).update({num:num, note:note}); closeModal(); openPages(); }
-        function openZoom(i){ zIdx=i; updZ(); document.getElementById('zoom-ol').style.display='flex'; }
-        function navZ(d,e){ e.stopPropagation(); zIdx=(zIdx+d+currentPages.length)%currentPages.length; updZ(); }
-        function updZ(){ document.getElementById('zoom-img').src=currentPages[zIdx].img; }
 
-        // --- CRUD LIBROS ---
+        // --- LOGICA DE ZOOM MEJORADA (TAP TO ZOOM) ---
+        let isCoverZoom = false;
+
+        function openZoom(i){ 
+            zIdx=i; isCoverZoom=false; updZ(); 
+            document.getElementById('zoom-ol').style.display='flex'; 
+            document.getElementById('z-l').style.display='block';
+            document.getElementById('z-r').style.display='block';
+        }
+        
+        function viewCover() {
+            const b=books.find(x=>x.id===curId);
+            document.getElementById('zoom-img').src = b.cover;
+            document.getElementById('zoom-img').classList.remove('zoomed');
+            document.getElementById('zoom-ol').style.display='flex';
+            document.getElementById('z-l').style.display='none';
+            document.getElementById('z-r').style.display='none';
+            isCoverZoom = true;
+        }
+
+        function navZ(d,e){ 
+            e.stopPropagation(); 
+            if(isCoverZoom) return;
+            zIdx=(zIdx+d+currentPages.length)%currentPages.length; 
+            updZ(); 
+        }
+
+        function updZ(){ 
+            const img = document.getElementById('zoom-img');
+            img.classList.remove('zoomed'); // Reset zoom al cambiar de foto
+            img.src=currentPages[zIdx].img; 
+        }
+
+        function toggleZoom(e) {
+            e.stopPropagation(); // Evitar cerrar el overlay
+            const img = document.getElementById('zoom-img');
+            img.classList.toggle('zoomed');
+        }
+
+        function closeZoom() {
+            // Solo cierra si no estás haciendo zoom
+            const img = document.getElementById('zoom-img');
+            if(img.classList.contains('zoomed')) {
+                img.classList.remove('zoomed');
+            } else {
+                document.getElementById('zoom-ol').style.display='none';
+            }
+        }
+
+        // --- RESTO DEL CRUD ---
         function modal(h){ document.getElementById('modal-c').innerHTML=h; document.getElementById('modal-wrapper').style.display='flex'; }
         function closeModal(){ document.getElementById('modal-wrapper').style.display='none'; }
         function openSort(){ modal(`<h3>Ordenar</h3><div onclick="setSort('title')" class="sort-opt ${sortKey==='title'?'selected':''}">Título (A-Z)</div><div onclick="setSort('author')" class="sort-opt ${sortKey==='author'?'selected':''}">Autor</div><div onclick="setSort('year')" class="sort-opt ${sortKey==='year'?'selected':''}">Año</div><div onclick="setSort('readDate')" class="sort-opt ${sortKey==='readDate'?'selected':''}">Fecha</div><div onclick="setSort('rating')" class="sort-opt ${sortKey==='rating'?'selected':''}">Valoración</div><hr style="border-color:#333;margin:20px 0"><button class="btn-main" onclick="toggleOrder()" style="background:#333;border:1px solid #555">Invertir Orden: ${sortOrder===1?'Asc ⬇':'Desc ⬆'}</button><button class="btn-sec" onclick="closeModal()">Cerrar</button>`); }
         function setSort(k){ sortKey=k; openSort(); render(); }
         function toggleOrder(){ sortOrder*=-1; openSort(); render(); }
-        
         function openAdd(){ modal(`<h3>Nuevo Libro</h3><input id="t" class="input-field" placeholder="Título"><input id="a" class="input-field" placeholder="Autor"><input id="y" type="number" class="input-field" placeholder="Año"><input id="rd" class="input-field" placeholder="Fecha Lectura"><label style="color:#888;font-size:0.8rem">Portada</label><input id="f" type="file" class="input-field"><button class="btn-main" onclick="addB()">Guardar</button><button class="btn-sec" onclick="closeModal()">Cancelar</button>`); }
         async function addB(){ const t=document.getElementById('t').value; if(!t)return; const f=document.getElementById('f').files[0]; const c=f?await procImg(f):"https://via.placeholder.com/300x450"; const nb={id:Date.now().toString(), userId:user, title:t, author:document.getElementById('a').value.toUpperCase(), year:document.getElementById('y').value, readDate:document.getElementById('rd').value, cover:c, favorite:false, marked:false, isPend:false, rating:0, comment:""}; books.push(nb); await saveBookToDB(nb); closeModal(); render(); }
-        
         function openEdit(){ const b=books.find(x=>x.id===curId); modal(`<h3>Editar</h3><input id="et" class="input-field" value="${b.title}"><input id="ea" class="input-field" value="${b.author}"><input id="ey" class="input-field" value="${b.year}"><input id="ed" class="input-field" value="${b.readDate}"><input id="ef" type="file" class="input-field"><button class="btn-main" onclick="saveEd()">Guardar</button><button class="btn-sec" onclick="closeModal()">Cancelar</button>`); }
         async function saveEd(){ const b=books.find(x=>x.id===curId); b.title=document.getElementById('et').value; b.author=document.getElementById('ea').value; b.year=document.getElementById('ey').value; b.readDate=document.getElementById('ed').value; const f=document.getElementById('ef').files[0]; if(f) b.cover=await procImg(f); await saveBookToDB(b); closeModal(); openDet(curId); render(); }
         async function delBook(){ if(confirm("¿Eliminar libro y todas sus páginas?")){ const pagesSnap = await db.collection(COL_BOOKS).doc(curId).collection('pages').get(); const batch = db.batch(); pagesSnap.forEach(doc => batch.delete(doc.ref)); await batch.commit(); await db.collection(COL_BOOKS).doc(curId).delete(); books=books.filter(x=>x.id!==curId); document.getElementById('detail-view').style.display='none'; render(); } }
@@ -395,94 +438,51 @@
         function openSettings(){ const p=profiles.find(x=>x.name===user); modal(`<h3>Ajustes</h3><label>Nombre</label><input id="sn" class="input-field" value="${p.name}"><label>Foto</label><input id="sf" type="file" class="input-field"><button class="btn-main" onclick="saveSet()">Guardar</button><hr style="border-color:#333;margin:20px 0"><button class="btn-sec" onclick="exportD()">💾 Exportar Todo</button><button class="btn-sec" onclick="document.getElementById('imp').click()">📂 Importar Copia</button><input id="imp" type="file" hidden onchange="importD(this)"><hr style="border-color:#333;margin:20px 0"><button class="btn-sec" onclick="logout()" style="color:#ff4444;border-color:#ff4444">Cerrar Sesión</button><button class="btn-sec" onclick="closeModal()">Cerrar</button>`); }
         async function saveSet(){ const n=document.getElementById('sn').value.toUpperCase(), f=document.getElementById('sf').files[0]; profiles.find(x=>x.name===user).name=n; user=n; localStorage.setItem('bf_user', user); if(f) profiles.find(x=>x.name===user).avatar=await procImg(f); await saveProfilesToDB(); location.reload(); }
         
-        // --- EXPORTAR TODO ---
         async function exportD() { 
-            const btn = document.querySelector('button[onclick="exportD()"]');
-            const originalText = btn.innerText;
-            btn.innerText = "⏳ Recopilando datos...";
+            const btn = document.querySelector('button[onclick="exportD()"]'); const originalText = btn.innerText; btn.innerText = "⏳ Recopilando...";
             try {
-                const userBooks = books.filter(b => b.userId === user);
-                const fullBackup = [];
+                const userBooks = books.filter(b => b.userId === user); const fullBackup = [];
                 for (let book of userBooks) {
                     let bookCopy = JSON.parse(JSON.stringify(book));
                     const pagesSnap = await db.collection(COL_BOOKS).doc(book.id).collection('pages').get();
-                    const pagesData = pagesSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
-                    bookCopy.pagesBackup = pagesData;
+                    bookCopy.pagesBackup = pagesSnap.docs.map(doc => ({ ...doc.data(), id: doc.id }));
                     fullBackup.push(bookCopy);
                 }
-                const a = document.createElement('a');
-                a.href = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(fullBackup));
-                a.download = `BookFlix_Backup_${user}_${new Date().toISOString().slice(0,10)}.json`;
-                a.click();
-                btn.innerText = originalText;
-            } catch(e) { console.error(e); alert("Error al exportar: " + e.message); btn.innerText = "Error"; }
+                const a = document.createElement('a'); a.href = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(fullBackup)); a.download = `BookFlix_Backup_${user}_${new Date().toISOString().slice(0,10)}.json`; a.click(); btn.innerText = originalText;
+            } catch(e) { console.error(e); alert("Error al exportar"); btn.innerText = "Error"; }
         }
 
-        // --- IMPORTAR TODO ---
         function importD(i) { 
             const r = new FileReader(); 
             r.onload = async e => { 
                 try {
-                    if(!confirm("⚠️ Esto añadirá los libros del archivo a tu biblioteca actual. ¿Continuar?")) return;
+                    if(!confirm("⚠️ Esto fusionará los libros importados. ¿Seguir?")) return;
                     const importedBooks = JSON.parse(e.target.result); 
-                    let count = 0;
                     for(const b of importedBooks){ 
-                        const oldPages = b.pagesBackup || [];
-                        delete b.pagesBackup;
-                        b.userId = user;
-                        b.id = Date.now().toString() + Math.random().toString().slice(2,5);
-                        await saveBookToDB(b);
-                        books.push(b);
-                        for(const p of oldPages) {
-                            const pageData = { num: p.num, note: p.note, img: p.img, createdAt: firebase.firestore.FieldValue.serverTimestamp() };
-                            await db.collection(COL_BOOKS).doc(b.id).collection('pages').add(pageData);
-                        }
-                        count++;
+                        const oldPages = b.pagesBackup || []; delete b.pagesBackup;
+                        b.userId = user; b.id = Date.now().toString() + Math.random().toString().slice(2,5);
+                        await saveBookToDB(b); books.push(b);
+                        for(const p of oldPages) await db.collection(COL_BOOKS).doc(b.id).collection('pages').add({ num: p.num, note: p.note, img: p.img, createdAt: firebase.firestore.FieldValue.serverTimestamp() });
                     } 
-                    alert(`✅ Importados ${count} libros con sus páginas.`); location.reload(); 
-                } catch(x) { console.error(x); alert("Error al importar: El archivo no es válido."); } 
+                    alert("✅ Importación completada"); location.reload(); 
+                } catch(x) { console.error(x); alert("Error en archivo"); } 
             }; 
             r.readAsText(i.files[0]); 
         }
 
-        // --- PROCESADOR DE IMAGEN CORREGIDO (Solución Bug Fondo Gris) ---
         function procImg(f){ 
             return new Promise((resolve, reject) => { 
-                if(!f) reject("No file");
-                const rd = new FileReader(); 
+                if(!f) reject("No file"); const rd = new FileReader(); 
                 rd.onload = e => { 
                     const i = new Image(); 
                     i.onload = () => { 
-                        const c = document.createElement('canvas'); 
-                        const ctx = c.getContext('2d'); 
-                        
-                        // Límites
-                        const MAX_W = 1000;
-                        const MAX_H = 1500;
-                        let w = i.width;
-                        let h = i.height;
-
-                        // Redimensionar manteniendo ratio
-                        if(w > h) { if(w > MAX_W) { h *= MAX_W/w; w = MAX_W; } }
-                        else { if(h > MAX_H) { w *= MAX_H/h; h = MAX_H; } }
-
-                        c.width = w; 
-                        c.height = h;
-
-                        // Fondo Negro (por si hay transparencias en la captura)
-                        ctx.fillStyle = '#000000';
-                        ctx.fillRect(0,0,w,h);
-
-                        // Dibujar
-                        ctx.drawImage(i, 0, 0, w, h); 
-                        
-                        // Exportar
+                        const c = document.createElement('canvas'); const ctx = c.getContext('2d'); 
+                        const MAX_W = 1000; const MAX_H = 1500; let w = i.width; let h = i.height;
+                        if(w > h) { if(w > MAX_W) { h *= MAX_W/w; w = MAX_W; } } else { if(h > MAX_H) { w *= MAX_H/h; h = MAX_H; } }
+                        c.width = w; c.height = h; ctx.fillStyle = '#000000'; ctx.fillRect(0,0,w,h); ctx.drawImage(i, 0, 0, w, h); 
                         resolve(c.toDataURL('image/jpeg', 0.8)); 
-                    };
-                    i.onerror = () => reject("Error imagen");
-                    i.src = e.target.result; // Asignar src después del onload
-                }; 
-                rd.readAsDataURL(f); 
+                    }; i.onerror = () => reject("Error imagen"); i.src = e.target.result; 
+                }; rd.readAsDataURL(f); 
             }); 
         }
     </script>
